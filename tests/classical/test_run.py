@@ -86,3 +86,17 @@ def test_cli_writes_predictions_and_sidecar(tmp_path):
     assert meta["stats"]["n_images"] == 1 and meta["train_time_s"] == 0
     assert meta["config"]["max_detections"] == 300 and meta["machine"]
     assert list((tmp_path / "preds_viz").glob("*.jpg"))
+
+
+def test_truncated_jpeg_raises_with_path(tmp_path):
+    good = tmp_path / "cut.jpg"
+    noise = np.random.default_rng(0).integers(0, 256, (128, 128, 3), np.uint8)
+    cv2.imwrite(str(good), noise)
+    good.write_bytes(good.read_bytes()[:good.stat().st_size // 3])
+    with pytest.raises(IOError, match="cut.jpg"):
+        run_split([ImageRecord("cut", good, np.zeros((0, 4)))], BlobConfig())
+
+
+def test_stats_count_images_that_hit_the_cap(tmp_path):
+    _, stats = run_split(_write_images(tmp_path), BlobConfig(max_detections=1))
+    assert stats["n_images_capped"] == 1

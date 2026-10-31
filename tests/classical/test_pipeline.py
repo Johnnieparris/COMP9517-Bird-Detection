@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import pytest
 
+from src.classical.boxes import iou_matrix
 from src.classical.pipeline import BlobConfig, detect
 
 
@@ -64,3 +65,11 @@ def test_from_yaml_rejects_unknown_key(tmp_path):
 
 def test_shipped_config_loads():
     assert BlobConfig.from_yaml("configs/m1_blob.yaml").max_detections >= 300
+
+
+def test_dense_flock_birds_are_matched_with_shipped_config():
+    centres = [(12 + 24 * i, 12 + 24 * j) for i in range(13) for j in range(12)]  # 156 discs
+    img = bgr_discs(300, 320, centres, r=7)
+    gt = np.array([[x - 7.5, y - 7.5, x + 7.5, y + 7.5] for x, y in centres])
+    dets = detect(img, BlobConfig.from_yaml("configs/m1_blob.yaml"))
+    assert (iou_matrix(gt, dets).max(axis=1) >= 0.5).sum() >= 130

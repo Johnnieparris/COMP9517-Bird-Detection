@@ -39,7 +39,9 @@ def detect_blobs(gray, sigmas, threshold, polarity):
     is_peak = (stack == ndimage.maximum_filter(stack, size=3)) & (stack > threshold)
     scale_idx, ys, xs = np.nonzero(is_peak)
     half = SQRT2 * sigmas[scale_idx]
-    dets = np.stack([xs - half, ys - half, xs + half, ys + half, stack[is_peak]], axis=1)
+    # A pixel index i covers [i, i + 1], so its centre is at i + 0.5 in the GT's coordinates.
+    cx, cy = xs + 0.5, ys + 0.5
+    dets = np.stack([cx - half, cy - half, cx + half, cy + half, stack[is_peak]], axis=1)
     return dets[np.argsort(-dets[:, 4], kind="stable")]
 
 

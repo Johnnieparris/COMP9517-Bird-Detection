@@ -2,8 +2,22 @@
 import time
 
 import cv2
+from PIL import Image
 
 from src.classical.pipeline import detect
+
+
+def read_image(path):
+    """Read a BGR image, raising with the path on a corrupt file.
+
+    cv2.imread fills in a truncated JPEG without an error, so decode it strictly first.
+    """
+    try:
+        with Image.open(path) as image:
+            image.load()
+    except OSError as error:
+        raise IOError(f"could not read image: {path}") from error
+    return cv2.imread(str(path))
 
 
 def run_split(records, cfg):
@@ -14,17 +28,18 @@ def run_split(records, cfg):
     """
     rows = []
     detect_seconds = 0.0
+    n_images_capped = 0
     for record in records:
-        image = cv2.imread(str(record.path))
-        if image is None:
-            raise IOError(f"could not read image: {record.path}")
+        image = read_image(record.path)
         start = time.perf_counter()
         dets = detect(image, cfg)
         detect_seconds += time.perf_counter() - start
+        n_images_capped += len(dets) >= cfg.max_detections
         for x1, y1, x2, y2, score in dets.tolist():
             rows.append({"image_id": record.image_id, "x1": x1, "y1": y1,
                          "x2": x2, "y2": y2, "score": score})
     stats = {"n_images": len(records), "n_detections": len(rows),
+             "n_images_capped": n_images_capped,
              "ms_per_image": 1000 * detect_seconds / max(len(records), 1)}
     return rows, stats
 

@@ -72,3 +72,10 @@ def test_suggest_sigmas_span_percentiles_in_increasing_order():
 def test_suggest_sigmas_empty_raises():
     with pytest.raises(ValueError):
         suggest_sigmas(np.zeros((0, 4)))
+
+
+def test_box_centre_uses_continuous_coordinates():
+    g = np.ones((64, 64), np.float32)
+    g[10:27, 10:27] = 0  # odd-sized block with edges at 10 and 27, so its centre is 18.5
+    x1, y1, x2, y2, _ = detect_blobs(g, [6.0], .05, "dark")[0]
+    assert (x1 + x2) / 2 == pytest.approx(18.5) and (y1 + y2) / 2 == pytest.approx(18.5)

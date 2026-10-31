@@ -75,6 +75,7 @@ def main():
     out.with_suffix(".meta.json").write_text(json.dumps(meta, indent=2))
 
     print(f"{stats['n_images']} images, {stats['n_detections']} detections, "
+          f"{stats['n_images_capped']} images at the cap, "
           f"{stats['ms_per_image']:.1f} ms/img -> {out}")
     if args.score:
         print(f"AP@0.5 {ap50(rows, records):.4f}  recall@0.5 {recall_at_iou(rows, records):.4f}")
