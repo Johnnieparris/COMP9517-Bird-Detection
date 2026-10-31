@@ -1,0 +1,10 @@
+# Method 1 baseline: multi-scale LoG blob detector.
+sigmas: [2, 3, 4, 6, 8, 12]  # in original-image pixels
+threshold: 0.05
+polarity: both
+clahe: false
+max_side: 1600
+nms_iou: 0.3
+min_area: 16.0
+max_area: null
+max_detections: 300
