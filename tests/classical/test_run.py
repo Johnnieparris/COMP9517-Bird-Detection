@@ -68,12 +68,12 @@ def test_limit_refused_with_final():
 
 
 def test_cli_writes_predictions_and_sidecar(tmp_path):
-    for split_dir in ("images", "labels"):
-        (tmp_path / "val" / split_dir).mkdir(parents=True)
+    for kind in ("images", "labels"):
+        (tmp_path / kind / "val").mkdir(parents=True)
     bird = np.full((64, 64, 3), 220, np.uint8)
     cv2.circle(bird, (32, 32), 6, (20, 20, 20), -1)
-    cv2.imwrite(str(tmp_path / "val" / "images" / "bird.png"), bird)
-    (tmp_path / "val" / "labels" / "bird.txt").write_text("0 0.5 0.5 0.2 0.2\n")
+    cv2.imwrite(str(tmp_path / "images" / "val" / "bird.png"), bird)
+    (tmp_path / "labels" / "val" / "bird.txt").write_text("0 0.5 0.5 0.2 0.2\n")
     out = tmp_path / "preds.json"
 
     p = _cli("--split", "val", "--data-root", str(tmp_path), "--out", str(out),

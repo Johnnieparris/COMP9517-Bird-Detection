@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 import cv2
 import numpy as np
 
-from src.classical.interim_data import load_split
+from src.classical.interim_data import DEFAULT_ROOT, load_split
 from src.classical.pipeline import BlobConfig
 from src.classical.quick_eval import ap50, recall_at_iou
 from src.classical.run import draw_overlay, run_split
@@ -27,7 +27,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True)
     parser.add_argument("--split", required=True, choices=["train", "val", "test"])
-    parser.add_argument("--data-root", default=str(ROOT / "data"))
+    parser.add_argument("--data-root", default=str(ROOT / DEFAULT_ROOT))
     parser.add_argument("--out", help="default: results/m1_<split>.json")
     parser.add_argument("--limit", type=int, help="only use the first N images")
     parser.add_argument("--score", action="store_true", help="print AP@0.5 and recall@0.5")

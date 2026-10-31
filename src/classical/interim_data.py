@@ -1,9 +1,9 @@
 """Temporary dataset loader for Method 1, until Member A's loader lands.
 
-Assumed layout (YOLO txt; confirm against the real download):
-    <root>/<split>/images/<image_id>.jpg
-    <root>/<split>/labels/<image_id>.txt   lines of "class cx cy w h", normalised
-A missing or empty label file means a negative image.
+Layout of the Beach Bird dataset, in YOLO txt format:
+    <root>/images/<split>/<image_id>.jpg
+    <root>/labels/<split>/<image_id>.txt   lines of "class cx cy w h", normalised
+An empty label file means a negative image.
 """
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+DEFAULT_ROOT = "data/Beach Bird Detection Dataset v1.0"
 SPLITS = ("train", "val", "test")
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
 
@@ -33,12 +34,12 @@ def _read_yolo_boxes(label_path, width, height):
                      (cx + w / 2) * width, (cy + h / 2) * height], axis=1)
 
 
-def load_split(split, root="data"):
+def load_split(split, root=DEFAULT_ROOT):
     """Return the split's ImageRecords, sorted by image_id for reproducible runs."""
     if split not in SPLITS:
         raise ValueError(f"split must be one of {SPLITS}, got {split!r}")
-    split_dir = Path(root) / split
-    image_dir = split_dir / "images"
+    root = Path(root)
+    image_dir = root / "images" / split
     if not image_dir.is_dir():
         raise FileNotFoundError(f"no images directory at {image_dir}")
 
@@ -48,6 +49,6 @@ def load_split(split, root="data"):
             continue
         with Image.open(path) as image:  # reads the header only
             width, height = image.size
-        boxes = _read_yolo_boxes(split_dir / "labels" / f"{path.stem}.txt", width, height)
+        boxes = _read_yolo_boxes(root / "labels" / split / f"{path.stem}.txt", width, height)
         records.append(ImageRecord(path.stem, path, boxes))
     return records
