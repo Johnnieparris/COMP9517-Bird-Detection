@@ -1,5 +1,5 @@
 # Method 1 baseline: multi-scale LoG blob detector.
-sigmas: [2, 3, 4, 6, 8, 12]  # in original-image pixels
+sigmas: [4.56, 7.72, 13.08, 22.14, 37.49, 63.47]  # from suggest_sigmas on train boxes, in original-image pixels
 threshold: 0.05
 polarity: both
 clahe: false
