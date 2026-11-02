@@ -8,3 +8,5 @@ results/*
 *.pt
 *.pth
 *.pkl
+
+.DS_Store
