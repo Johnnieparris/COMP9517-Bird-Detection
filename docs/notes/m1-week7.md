@@ -1,5 +1,7 @@
 # Method 1, Week 7 notes (Member B)
 
+Week 8 results and the current handoff are in `docs/notes/m1-week8.md`.
+
 All numbers are from `val`, using `src/classical/quick_eval.py`. A's shared evaluator hasn't landed, so they haven't been cross-checked yet. `test` has not been run.
 
 ## Baseline
