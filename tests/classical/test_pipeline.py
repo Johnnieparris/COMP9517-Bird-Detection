@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from src.classical.boxes import iou_matrix
-from src.classical.pipeline import BlobConfig, detect
+from src.classical.pipeline import BlobConfig, SegConfig, detect, load_config
 
 
 def bgr_discs(h, w, centres_xy, r):
@@ -85,3 +85,56 @@ def test_contrast_score_mode_replaces_log_response():
 def test_unknown_score_mode_raises():
     with pytest.raises(ValueError):
         detect(bgr_discs(64, 64, [(32, 32)], r=8), BlobConfig(score_mode="nope"))
+
+
+def test_seg_box_fits_elongated_bird():
+    image = np.full((200, 200, 3), 220, np.uint8)
+    cv2.ellipse(image, (100, 100), (30, 12), 0, 0, 360, (20, 20, 20), -1)
+    gt = np.array([[70., 88, 130, 112]])
+    assert iou_matrix(gt, detect(image, SegConfig())).max() >= 0.8
+
+
+def test_seg_dense_grid_keeps_at_least_130():
+    centres = [(12 + 24 * i, 12 + 24 * j) for i in range(13) for j in range(12)]  # 156 discs
+    assert len(detect(bgr_discs(300, 320, centres, r=4), SegConfig())) >= 130
+
+
+def test_plain_noisy_background_gives_no_detections():
+    noise = np.random.default_rng(0).normal(0, 3, (256, 256, 3))
+    image = np.clip(np.array([170, 200, 220]) + noise, 0, 255).astype(np.uint8)
+    assert detect(image, SegConfig()).shape == (0, 5)
+
+
+def test_seg_results_sorted_and_capped():
+    centres = [(12 + 24 * i, 12 + 24 * j) for i in range(13) for j in range(12)]
+    dets = detect(bgr_discs(300, 320, centres, r=4), SegConfig(max_detections=10))
+    assert len(dets) == 10 and np.all(np.diff(dets[:, 4]) <= 0)
+
+
+def test_seg_adaptive_foreground_finds_bird():
+    image = bgr_discs(200, 200, [(100, 100)], r=15)
+    assert len(detect(image, SegConfig(foreground="adaptive"))) == 1
+
+
+def test_unknown_foreground_raises():
+    with pytest.raises(ValueError):
+        detect(np.zeros((32, 32, 3), np.uint8), SegConfig(foreground="nope"))
+
+
+def test_load_config_defaults_to_blob_for_week7_files():
+    assert isinstance(load_config("configs/m1_blob.yaml"), BlobConfig)
+
+
+def test_load_config_reads_seg_and_rejects_unknown_key(tmp_path):
+    assert isinstance(load_config("configs/m1_seg_colour.yaml"), SegConfig)
+    path = tmp_path / "c.yaml"
+    path.write_text("method: seg\nbg_kernal: 3\n")
+    with pytest.raises(TypeError):
+        load_config(path)
+
+
+def test_load_config_rejects_unknown_method(tmp_path):
+    path = tmp_path / "c.yaml"
+    path.write_text("method: nope\n")
+    with pytest.raises(ValueError):
+        load_config(path)

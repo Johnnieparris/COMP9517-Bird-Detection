@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 
 from src.classical.interim_data import DEFAULT_ROOT, load_split
-from src.classical.pipeline import BlobConfig
+from src.classical.pipeline import load_config
 from src.classical.quick_eval import ap50, recall_at_iou
 from src.classical.run import draw_overlay, run_split
 
@@ -61,7 +61,7 @@ def save_overlays(records, rows, count, out_dir):
 
 def main():
     args = parse_args()
-    cfg = BlobConfig.from_yaml(args.config)
+    cfg = load_config(args.config)
     records = load_split(args.split, root=args.data_root)[:args.limit]
 
     rows, stats = run_split(records, cfg)

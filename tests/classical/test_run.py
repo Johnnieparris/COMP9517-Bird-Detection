@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from src.classical.interim_data import ImageRecord
-from src.classical.pipeline import BlobConfig
+from src.classical.pipeline import BlobConfig, SegConfig
 from src.classical.run import draw_overlay, run_split
 
 SCRIPT = "scripts/run_m1.py"
@@ -100,3 +100,9 @@ def test_truncated_jpeg_raises_with_path(tmp_path):
 def test_stats_count_images_that_hit_the_cap(tmp_path):
     _, stats = run_split(_write_images(tmp_path), BlobConfig(max_detections=1))
     assert stats["n_images_capped"] == 1
+
+
+def test_run_split_accepts_seg_config(tmp_path):
+    records = _write_images(tmp_path)
+    rows, stats = run_split(records, SegConfig())
+    assert stats["n_images"] == 2 and {row["image_id"] for row in rows} <= {"bird"}
