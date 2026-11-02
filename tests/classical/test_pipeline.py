@@ -73,3 +73,15 @@ def test_dense_flock_birds_are_matched_with_shipped_config():
     gt = np.array([[x - 7.5, y - 7.5, x + 7.5, y + 7.5] for x, y in centres])
     dets = detect(img, BlobConfig.from_yaml("configs/m1_blob.yaml"))
     assert (iou_matrix(gt, dets).max(axis=1) >= 0.5).sum() >= 130
+
+
+def test_contrast_score_mode_replaces_log_response():
+    image = bgr_discs(200, 200, [(100, 100)], r=15)
+    log_score = detect(image, BlobConfig())[0, 4]
+    contrast_score = detect(image, BlobConfig(score_mode="contrast"))[0, 4]
+    assert contrast_score != log_score
+
+
+def test_unknown_score_mode_raises():
+    with pytest.raises(ValueError):
+        detect(bgr_discs(64, 64, [(32, 32)], r=8), BlobConfig(score_mode="nope"))

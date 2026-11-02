@@ -1,0 +1,11 @@
+# Method 1 baseline with boxes scored by local contrast instead of the LoG response.
+sigmas: [4.56, 7.72, 13.08, 22.14, 37.49, 63.47]  # from suggest_sigmas on train boxes, in original-image pixels
+threshold: 0.05
+polarity: both
+clahe: false
+max_side: 1600
+nms_iou: 0.3
+min_area: 16.0
+max_area: null
+max_detections: 300
+score_mode: contrast

@@ -8,6 +8,7 @@ import yaml
 
 from src.classical.blob import detect_blobs, to_gray
 from src.classical.boxes import clip_boxes, filter_boxes, nms
+from src.classical.scoring import local_contrast
 
 
 @dataclass
@@ -21,6 +22,7 @@ class BlobConfig:
     min_area: float = 16.0
     max_area: Optional[float] = None
     max_detections: int = 300
+    score_mode: str = "log"  # or "contrast"
 
     @classmethod
     def from_yaml(cls, path):
@@ -34,6 +36,8 @@ def detect(image_bgr, cfg):
     Returns (N, 5) detections of x1, y1, x2, y2, score in original-image pixels,
     sorted by score, descending.
     """
+    if cfg.score_mode not in ("log", "contrast"):
+        raise ValueError(f"unknown score_mode {cfg.score_mode!r}")
     height, width = image_bgr.shape[:2]
     gray = to_gray(image_bgr, cfg.clahe)
 
@@ -45,4 +49,6 @@ def detect(image_bgr, cfg):
     dets[:, :4] /= scale
     dets = clip_boxes(dets, width, height)
     dets = filter_boxes(dets, cfg.min_area, cfg.max_area)
+    if cfg.score_mode == "contrast":
+        dets[:, 4] = local_contrast(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2LAB), dets)
     return nms(dets, cfg.nms_iou)[:cfg.max_detections]
