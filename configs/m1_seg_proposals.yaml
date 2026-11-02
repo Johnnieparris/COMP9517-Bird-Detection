@@ -1,0 +1,13 @@
+# High-recall candidates for Method 2: tuned colour background, permissive filters, larger cap.
+method: seg
+foreground: colour
+downscale: 8
+bg_kernel: 31
+min_distance: 8
+morph_kernel: 1
+min_area: 16
+max_aspect: 5
+min_fill: 0.15
+max_side_frac: 0.8
+nms_iou: 0.5
+max_detections: 2000

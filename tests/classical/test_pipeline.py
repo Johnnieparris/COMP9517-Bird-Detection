@@ -138,3 +138,8 @@ def test_load_config_rejects_unknown_method(tmp_path):
     path.write_text("method: nope\n")
     with pytest.raises(ValueError):
         load_config(path)
+
+
+def test_seg_proposals_config_loads_with_large_cap():
+    cfg = load_config("configs/m1_seg_proposals.yaml")
+    assert isinstance(cfg, SegConfig) and cfg.max_detections >= 1000
