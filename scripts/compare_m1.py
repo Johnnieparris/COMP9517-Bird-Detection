@@ -24,7 +24,8 @@ def compare_row(pred_path, records, variant, split=None):
         raise ValueError(f"{pred_path} is from {meta['split']}, not {split}")
     f1 = best_f1(rows, records)
     return {"variant": variant, "split": meta["split"], "ap50": ap50(rows, records),
-            "recall50": recall_at_iou(rows, records), "precision": f1["precision"], "f1": f1["f1"],
+            "recall50": recall_at_iou(rows, records), "precision": f1["precision"],
+            "recall_at_best_f1": f1["recall"], "f1": f1["f1"],
             "count_mae": count_mae(rows, records, f1["score_threshold"]),
             "score_threshold": f1["score_threshold"], "ms_per_image": meta["stats"]["ms_per_image"],
             "train_time_s": meta["train_time_s"], "n_images_capped": meta["stats"]["n_images_capped"],
@@ -46,7 +47,7 @@ def main():
         writer.writeheader()
         writer.writerows(table)
     for row in table:
-        print(f"{row['variant']:32s} AP {row['ap50']:.4f} R {row['recall50']:.3f} P {row['precision']:.3f} "
+        print(f"{row['variant']:32s} AP {row['ap50']:.4f} R(all) {row['recall50']:.3f} R {row['recall_at_best_f1']:.3f} P {row['precision']:.3f} "
               f"F1 {row['f1']:.3f} MAE {row['count_mae']:.2f} {row['ms_per_image']:.1f} ms/img")
 
 

@@ -28,7 +28,9 @@ class BlobConfig:
     @classmethod
     def from_yaml(cls, path):
         with open(path) as f:
-            return cls(**yaml.safe_load(f))  # an unknown key raises TypeError
+            values = yaml.safe_load(f)
+        values.pop("method", None)  # written by the tuning script; this class is the blob method
+        return cls(**values)  # an unknown key raises TypeError
 
 
 @dataclass

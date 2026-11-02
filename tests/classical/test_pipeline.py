@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import cv2
 import numpy as np
 import pytest
@@ -143,3 +145,26 @@ def test_load_config_rejects_unknown_method(tmp_path):
 def test_seg_proposals_config_loads_with_large_cap():
     cfg = load_config("configs/m1_seg_proposals.yaml")
     assert isinstance(cfg, SegConfig) and cfg.max_detections >= 1000
+
+
+def test_every_shipped_config_loads_and_runs():
+    image = bgr_discs(128, 128, [(64, 64)], r=12)
+    paths = sorted(Path("configs").glob("m1_*.yaml"))
+    assert paths
+    for path in paths:
+        assert detect(image, load_config(path)).shape[1] == 5
+
+
+def test_blob_from_yaml_accepts_tuned_config():
+    assert BlobConfig.from_yaml("configs/m1_blob_tuned.yaml").score_mode == "contrast"
+
+
+# These pin known limits of the tuned detectors, stated in docs/notes/m1-week8.md.
+def test_tuned_colour_returns_nothing_on_dense_small_birds():
+    centres = [(12 + 24 * i, 12 + 24 * j) for i in range(13) for j in range(12)]  # r=4 is under min_area
+    assert len(detect(bgr_discs(300, 320, centres, r=4), load_config("configs/m1_seg_colour_tuned.yaml"))) == 0
+
+
+def test_proposal_config_keeps_dense_small_birds():
+    centres = [(12 + 24 * i, 12 + 24 * j) for i in range(13) for j in range(12)]
+    assert len(detect(bgr_discs(300, 320, centres, r=4), load_config("configs/m1_seg_proposals.yaml"))) == 156

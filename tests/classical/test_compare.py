@@ -30,3 +30,18 @@ def test_compare_row_needs_sidecar_for_this_split(tmp_path):
     pred, records = _write(tmp_path, split="train")
     with pytest.raises(ValueError):
         compare_row(pred, records, "seg", split="val")
+
+
+def test_compare_row_recall_at_best_f1_goes_with_precision(tmp_path):
+    pred, records = _write(tmp_path)
+    rows = json.loads(pred.read_text()) + [
+        {"image_id": "a", "x1": 50, "y1": 50, "x2": 60, "y2": 60, "score": 0.5},
+        {"image_id": "a", "x1": 20, "y1": 20, "x2": 30, "y2": 30, "score": 0.1}]
+    pred.write_text(json.dumps(rows))
+    records = [ImageRecord("a", None, np.array([[0., 0, 10, 10], [20, 20, 30, 30], [70, 70, 80, 80]]))]
+    row = compare_row(pred, records, "seg")
+    # best F1 is at the last detection: 2 TP of 3 rows, 3 GT
+    assert row["recall_at_best_f1"] == pytest.approx(2 / 3) and row["precision"] == pytest.approx(2 / 3)
+    records = [ImageRecord("a", None, np.array([[0., 0, 10, 10]]))]
+    row = compare_row(pred, records, "seg")
+    assert row["recall_at_best_f1"] == 1.0 and row["recall50"] == 1.0
