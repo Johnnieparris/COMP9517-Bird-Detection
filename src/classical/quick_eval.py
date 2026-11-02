@@ -52,3 +52,29 @@ def recall_at_iou(rows, records, iou=0.5):
     if n_gt == 0:
         raise ValueError("recall is undefined for a split with no ground-truth boxes")
     return float(is_tp.sum() / n_gt)
+
+
+def best_f1(rows, records, iou=0.5):
+    """Precision, recall and F1 at the score threshold that maximises F1."""
+    is_tp, n_gt = _match(rows, records, iou)
+    if n_gt == 0:
+        raise ValueError("F1 is undefined for a split with no ground-truth boxes")
+    if not len(is_tp):
+        return {"precision": 0.0, "recall": 0.0, "f1": 0.0, "score_threshold": 0.0}
+    scores = np.sort([row["score"] for row in rows])[::-1]  # the same ranking as _match
+    tp = np.cumsum(is_tp)
+    precision = tp / np.arange(1, len(tp) + 1)
+    recall = tp / n_gt
+    f1 = 2 * precision * recall / np.maximum(precision + recall, 1e-12)
+    best = int(f1.argmax())
+    return {"precision": float(precision[best]), "recall": float(recall[best]),
+            "f1": float(f1[best]), "score_threshold": float(scores[best])}
+
+
+def count_mae(rows, records, score_threshold):
+    """Mean over all images of |detections scoring >= threshold - GT count|."""
+    counts = {record.image_id: 0 for record in records}
+    for row in rows:
+        if row["score"] >= score_threshold:
+            counts[row["image_id"]] += 1
+    return float(np.mean([abs(counts[r.image_id] - len(r.boxes)) for r in records]))

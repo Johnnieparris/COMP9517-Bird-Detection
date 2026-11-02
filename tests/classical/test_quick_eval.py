@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from src.classical.interim_data import ImageRecord
-from src.classical.quick_eval import ap50, recall_at_iou
+from src.classical.quick_eval import ap50, recall_at_iou, best_f1, count_mae
 
 GT1 = [0, 0, 10, 10]
 GT2 = [20, 20, 30, 30]
@@ -58,3 +58,28 @@ def test_split_without_gt_raises():
 
 def test_recall_counts_gt_covered():
     assert recall_at_iou([_row("a", GT1, .9)], [_rec("a", [GT1, GT2])]) == pytest.approx(.5)
+
+
+def test_best_f1_chooses_threshold_before_false_positive():
+    records = [_rec("a", [[0, 0, 10, 10], [20, 20, 30, 30]])]
+    rows = [_row("a", [0, 0, 10, 10], 0.9), _row("a", [20, 20, 30, 30], 0.8),
+            _row("a", [50, 50, 60, 60], 0.1)]
+    result = best_f1(rows, records)
+    assert result == {"precision": 1.0, "recall": 1.0, "f1": 1.0, "score_threshold": 0.8}
+
+
+def test_best_f1_with_no_rows_is_zero():
+    assert best_f1([], [_rec("a", [[0, 0, 10, 10]])])["f1"] == 0.0
+
+
+def test_count_mae_counts_images_with_no_rows():
+    records = [_rec("a", [[0, 0, 1, 1], [2, 2, 3, 3]]),
+               _rec("b", [[0, 0, 1, 1], [2, 2, 3, 3], [4, 4, 5, 5]]),
+               _rec("c", [])]
+    rows = [_row("a", [0, 0, 1, 1], .9), _row("a", [2, 2, 3, 3], .9), _row("c", [0, 0, 1, 1], .9)]
+    assert count_mae(rows, records, 0.5) == (0 + 3 + 1) / 3
+
+
+def test_count_mae_ignores_rows_below_threshold():
+    rows = [_row("a", [0, 0, 1, 1], .9), _row("a", [2, 2, 3, 3], .1)]
+    assert count_mae(rows, [_rec("a", [[0, 0, 1, 1]])], 0.5) == 0
