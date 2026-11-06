@@ -37,7 +37,12 @@ def _read_boxes(label_path, width, height):
             parts = line.split()
             if len(parts) != 5:
                 continue
-            _, cx, cy, w, h = map(float, parts)
+            try:
+                _, cx, cy, w, h = map(float, parts)
+            except ValueError:  # e.g. '0 abc 0.5 0.1 0.1'
+                continue
+            if not all(np.isfinite(v) for v in (cx, cy, w, h)):  # nan / inf
+                continue
             boxes.append([(cx - w / 2) * width, (cy - h / 2) * height,
                           (cx + w / 2) * width, (cy + h / 2) * height])
     return np.array(boxes, dtype=np.float32).reshape(-1, 4)

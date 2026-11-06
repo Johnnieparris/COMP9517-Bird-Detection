@@ -47,7 +47,17 @@ def load_split_manifest(path):
 
 
 def load_split_from_manifest(root, manifest, split):
-    """DetectionRecords for one split of a saved manifest."""
+    """DetectionRecords for one split of a saved manifest.
+ 
+    Raises an error if any image in the manifest is not on disk
+    (for example an incomplete download), so nobody trains on a smaller set.
+    """
     wanted = set(manifest[split])
-    records = [r for s in SPLITS for r in load_split(root, s)]
-    return [r for r in records if r.image_id in wanted]
+    records = [r for s in SPLITS for r in load_split(root, s) if r.image_id in wanted]
+    missing = sorted(wanted - {r.image_id for r in records})
+    if missing:
+        shown = ", ".join(missing[:10]) + (" ..." if len(missing) > 10 else "")
+        raise ValueError(f"{len(missing)} of {len(wanted)} '{split}' images from the "
+                         f"manifest are missing on disk: {shown}. "
+                         "Re-download the dataset (scripts/download_dataset.py).")
+    return records

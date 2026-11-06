@@ -70,7 +70,7 @@ def check_corrupt_images(root):
         for img in list_images(root / "images" / s):
             try:
                 with Image.open(img) as im:
-                    im.verify()
+                    im.load()
             except Exception as e:
                 out.append(f"{s}/{img.name}: {type(e).__name__}")
     return out
