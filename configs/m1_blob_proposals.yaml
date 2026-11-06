@@ -1,0 +1,10 @@
+# High-recall candidates for Method 2: low threshold, weak NMS, larger cap.
+sigmas: [4.56, 7.72, 13.08, 22.14, 37.49, 63.47]
+threshold: 0.01
+polarity: both
+clahe: false
+max_side: 1600
+nms_iou: 0.5
+min_area: 16.0
+max_area: null
+max_detections: 2000

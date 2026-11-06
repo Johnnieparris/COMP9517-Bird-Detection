@@ -1,0 +1,15 @@
+# Best of 200 random trials on val: AP@0.5 0.1024, seed 0, 2026-11-02.
+method: seg
+foreground: colour
+downscale: 8
+bg_kernel: 31
+min_distance: 12
+block: 101
+c: 15.0
+morph_kernel: 1
+min_area: 256
+max_aspect: 2.5
+min_fill: 0.1
+max_side_frac: 0.8
+nms_iou: 0.7
+max_detections: 300

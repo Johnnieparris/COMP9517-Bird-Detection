@@ -1,0 +1,12 @@
+# Method 1: local-mean thresholding of both polarities, components. Hand-set start for tuning.
+method: seg
+foreground: adaptive
+block: 101
+c: 15
+morph_kernel: 3
+min_area: 16.0
+max_aspect: 4.0
+min_fill: 0.25
+max_side_frac: 0.8
+nms_iou: 0.3
+max_detections: 300

@@ -1,0 +1,12 @@
+.venv/
+.superpowers/
+__pycache__/
+.pytest_cache/
+data/
+results/*
+!results/*.csv
+*.pt
+*.pth
+*.pkl
+
+.DS_Store

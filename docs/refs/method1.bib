@@ -1,0 +1,100 @@
+% Details checked against Crossref on 31 Oct and 2 Nov 2026. The OpenCV entry is a project page, not in Crossref.
+
+% Scale-normalised LoG and automatic scale selection: the basis of the blob detector.
+@article{lindeberg1998feature,
+  author  = {Lindeberg, Tony},
+  title   = {Feature Detection with Automatic Scale Selection},
+  journal = {International Journal of Computer Vision},
+  volume  = {30},
+  number  = {2},
+  pages   = {79--116},
+  year    = {1998},
+  doi     = {10.1023/A:1008045108935}
+}
+
+% Global thresholding: the colour-distance mask in segment.py.
+@article{otsu1979threshold,
+  author  = {Otsu, Nobuyuki},
+  title   = {A Threshold Selection Method from Gray-Level Histograms},
+  journal = {IEEE Transactions on Systems, Man, and Cybernetics},
+  volume  = {9},
+  number  = {1},
+  pages   = {62--66},
+  year    = {1979},
+  doi     = {10.1109/TSMC.1979.4310076}
+}
+
+% CLAHE: the optional preprocessing step in to_gray.
+@incollection{zuiderveld1994clahe,
+  author    = {Zuiderveld, Karel},
+  title     = {Contrast Limited Adaptive Histogram Equalization},
+  booktitle = {Graphics Gems IV},
+  pages     = {474--485},
+  publisher = {Academic Press},
+  year      = {1994},
+  doi       = {10.1016/B978-0-12-336156-1.50061-6}
+}
+
+% Survey from the spec: context for classical detectors in the literature review.
+@article{zou2023object,
+  author  = {Zou, Zhengxia and Chen, Keyan and Shi, Zhenwei and Guo, Yuhong and Ye, Jieping},
+  title   = {Object Detection in 20 Years: A Survey},
+  journal = {Proceedings of the IEEE},
+  volume  = {111},
+  number  = {3},
+  pages   = {257--276},
+  year    = {2023},
+  doi     = {10.1109/JPROC.2023.3238524}
+}
+
+% Local-mean adaptive thresholding: the adaptive mask in segment.py.
+@article{bradley2007adaptive,
+  author  = {Bradley, Derek and Roth, Gerhard},
+  title   = {Adaptive Thresholding using the Integral Image},
+  journal = {Journal of Graphics Tools},
+  volume  = {12},
+  number  = {2},
+  pages   = {13--21},
+  year    = {2007},
+  doi     = {10.1080/2151237X.2007.10129236}
+}
+
+% Opening, closing and connected components: clean_mask and mask_to_boxes.
+@book{soille2004morphological,
+  author    = {Soille, Pierre},
+  title     = {Morphological Image Analysis},
+  publisher = {Springer},
+  address   = {Berlin, Heidelberg},
+  year      = {2004},
+  doi       = {10.1007/978-3-662-05088-0}
+}
+
+% Software. Versions used are pinned in requirements.txt. OpenCV 5.0 and PyYAML are cited by project page.
+@article{virtanen2020scipy,
+  author  = {Virtanen, Pauli and Gommers, Ralf and Oliphant, Travis E. and others},
+  title   = {{SciPy} 1.0: Fundamental Algorithms for Scientific Computing in {Python}},
+  journal = {Nature Methods},
+  volume  = {17},
+  number  = {3},
+  pages   = {261--272},
+  year    = {2020},
+  doi     = {10.1038/s41592-019-0686-2}
+}
+
+@article{harris2020numpy,
+  author  = {Harris, Charles R. and Millman, K. Jarrod and van der Walt, St{\'e}fan J. and others},
+  title   = {Array Programming with {NumPy}},
+  journal = {Nature},
+  volume  = {585},
+  number  = {7825},
+  pages   = {357--362},
+  year    = {2020},
+  doi     = {10.1038/s41586-020-2649-2}
+}
+
+@misc{opencv,
+  author       = {{OpenCV team}},
+  title        = {{OpenCV}: Open Source Computer Vision Library},
+  howpublished = {\url{https://opencv.org}},
+  note         = {Version 5.0.0}
+}
