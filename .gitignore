@@ -2,7 +2,7 @@
 .superpowers/
 __pycache__/
 .pytest_cache/
-data/
+/data/
 results/*
 !results/*.csv
 *.pt
