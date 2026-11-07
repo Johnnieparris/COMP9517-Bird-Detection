@@ -8,7 +8,7 @@ import pytest
 
 from src.classical.interim_data import ImageRecord
 from src.classical.pipeline import BlobConfig, SegConfig
-from src.classical.run import draw_overlay, run_split
+from src.classical.run import draw_overlay, rows_to_predictions, run_split
 
 SCRIPT = "scripts/run_m1.py"
 CONFIG = "configs/m1_blob.yaml"
@@ -86,6 +86,37 @@ def test_cli_writes_predictions_and_sidecar(tmp_path):
     assert meta["stats"]["n_images"] == 1 and meta["train_time_s"] == 0
     assert meta["config"]["max_detections"] == 300 and meta["machine"]
     assert list((tmp_path / "preds_viz").glob("*.jpg"))
+
+
+def test_rows_to_predictions_gives_every_record_an_n_by_5_array(tmp_path):
+    records = _write_images(tmp_path)
+    rows = [{"image_id": "bird", "x1": 1., "y1": 2., "x2": 3., "y2": 4., "score": .9},
+            {"image_id": "bird", "x1": 5., "y1": 6., "x2": 7., "y2": 8., "score": .4}]
+    preds = rows_to_predictions(rows, records)
+    assert set(preds) == {"bird", "empty"}
+    assert preds["bird"].tolist() == [[1, 2, 3, 4, .9], [5, 6, 7, 8, .4]]
+    assert preds["empty"].shape == (0, 5)
+
+
+def test_cli_publish_writes_shared_prediction_csv(tmp_path):
+    for kind in ("images", "labels"):
+        (tmp_path / kind / "val").mkdir(parents=True)
+    bird = np.full((64, 64, 3), 220, np.uint8)
+    cv2.circle(bird, (32, 32), 6, (20, 20, 20), -1)
+    cv2.imwrite(str(tmp_path / "images" / "val" / "bird.png"), bird)
+    cv2.imwrite(str(tmp_path / "images" / "val" / "empty.png"), np.full((64, 64, 3), 128, np.uint8))
+    (tmp_path / "labels" / "val" / "bird.txt").write_text("0 0.5 0.5 0.2 0.2\n")
+    (tmp_path / "labels" / "val" / "empty.txt").write_text("")
+    pred_dir = tmp_path / "predictions"
+
+    p = _cli("--split", "val", "--data-root", str(tmp_path), "--out", str(tmp_path / "preds.json"),
+             "--publish", str(pred_dir))
+
+    assert p.returncode == 0, p.stderr
+    lines = (pred_dir / "m1_val.csv").read_text().splitlines()
+    assert lines[0] == "method,split,image_id,x1,y1,x2,y2,score"
+    assert len(lines) > 1 and all(line.startswith("m1,val,bird,") for line in lines[1:])
+    assert "m1_val.csv" in p.stdout
 
 
 def test_truncated_jpeg_raises_with_path(tmp_path):
