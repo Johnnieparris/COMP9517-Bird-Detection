@@ -50,14 +50,10 @@ def box_iou(a, b):
     return np.where(union > 0, inter / np.where(union > 0, union, 1), 0.0)
 
 
-def _match_image(preds, gts, iou_thr):
-    """Match one image's detections to its real boxes.
-    Highest score goes first; each real box can only be used once.
-    Returns (scores, is_correct) for the detections, sorted by score."""
-    preds = np.asarray(preds, dtype=float).reshape(-1, 5)
-    preds = preds[np.argsort(-preds[:, 4], kind="stable")]
-    gts = np.asarray(gts, dtype=float).reshape(-1, 4)
-    correct = np.zeros(len(preds), dtype=bool)
+def _greedy_match(preds, gts, iou_thr):
+    """preds: (N, 5) already sorted by score. For each detection, the index of the
+    real box it matched, or -1 if it matched none. A real box is used only once."""
+    match = np.full(len(preds), -1, dtype=int)
     if len(preds) and len(gts):
         iou = box_iou(preds[:, :4], gts)
         used = np.zeros(len(gts), dtype=bool)
@@ -65,9 +61,39 @@ def _match_image(preds, gts, iou_thr):
             row = np.where(used, -1.0, iou[i])  # ignore real boxes already matched
             j = row.argmax()
             if row[j] >= iou_thr:
-                correct[i] = True
+                match[i] = j
                 used[j] = True
-    return preds[:, 4], correct
+    return match
+
+
+def _match_image(preds, gts, iou_thr):
+    """Match one image's detections to its real boxes.
+    Highest score goes first; each real box can only be used once.
+    Returns (scores, is_correct) for the detections, sorted by score."""
+    preds = np.asarray(preds, dtype=float).reshape(-1, 5)
+    preds = preds[np.argsort(-preds[:, 4], kind="stable")]
+    gts = np.asarray(gts, dtype=float).reshape(-1, 4)
+    return preds[:, 4], _greedy_match(preds, gts, iou_thr) >= 0
+
+
+def classify_detections(preds, gts, iou_thr=IOU_THR, score_thr=SCORE_THR):
+    """Sort one image's boxes into the three groups used for overlay pictures.
+    Uses exactly the same matching as evaluate(), so the counts agree.
+
+    Returns a dict of arrays:
+      'tp'  detections that found a real bird        (N, 5): x1 y1 x2 y2 score
+      'fp'  detections with no real bird (false alarms)
+      'fn'  real birds nobody found, shape (M, 4): x1 y1 x2 y2
+    Only detections with score >= score_thr are used."""
+    preds = np.asarray(preds, dtype=float).reshape(-1, 5)
+    preds = preds[preds[:, 4] >= score_thr]
+    preds = preds[np.argsort(-preds[:, 4], kind="stable")]
+    gts = np.asarray(gts, dtype=float).reshape(-1, 4)
+    match = _greedy_match(preds, gts, iou_thr)
+    hit = match >= 0
+    missed = np.ones(len(gts), dtype=bool)
+    missed[match[hit]] = False
+    return {"tp": preds[hit], "fp": preds[~hit], "fn": gts[missed]}
 
 
 def _collect(records, predictions, iou_thr):

@@ -7,7 +7,7 @@ Each method saves one CSV per split in the predictions/ folder:
 
 Why one file per method and split, and not a single big file? Each method can
 be run on its own (or at the same time as others) without touching anyone
-else's results. load_all_predictions() still gives you everything as ONE table,
+else's results. load_all_predictions() still gives you everything as ONE list,
 and export_combined_csv() writes it as ONE csv file.
 
     from predictions import save_predictions, load_predictions, load_all_predictions
@@ -15,7 +15,7 @@ and export_combined_csv() writes it as ONE csv file.
     preds, timing = run_and_time(records, my_method)
     save_predictions("m1", "val", records, preds)            # publish
     preds = load_predictions("m1", "val")                    # use with evaluate()
-    table = load_all_predictions()                           # all methods, one table
+    rows = load_all_predictions()                            # all methods, one list
 
 These files are GENERATED, not stored in git: predictions/ is in .gitignore.
 To compare methods, run each one on your own computer first.
@@ -129,12 +129,13 @@ def load_all_predictions(folder=PRED_DIR):
     return rows
 
 
-
-
 def export_combined_csv(path=None, folder=PRED_DIR):
-    """Write every method and split into ONE csv file (needs pandas).
+    """Write every method and split into ONE csv file.
     Default: predictions/combined.csv. Handy for Excel or sharing outside git."""
-    table = load_all_predictions(folder)
+    rows = load_all_predictions(folder)
     path = Path(path) if path else Path(folder) / "combined.csv"
-    table.to_csv(path, index=False)
+    with open(path, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=COLUMNS)
+        w.writeheader()
+        w.writerows(rows)
     return path
