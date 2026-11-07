@@ -30,7 +30,7 @@ from data.validation import SPLITS
 
 PRED_DIR = Path(__file__).resolve().parents[1] / "predictions"
 COLUMNS = ["method", "split", "image_id", "x1", "y1", "x2", "y2", "score"]
-MAX_PER_IMAGE = 100  # keep only the best detections per image, so files stay small
+MAX_PER_IMAGE = 200  # keep only the best detections per image, so files stay small
 
 
 def prediction_path(method, split, folder=PRED_DIR):
