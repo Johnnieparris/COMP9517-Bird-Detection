@@ -3,8 +3,10 @@
     <dest>/images/<train|val|test>/*.jpg
     <dest>/labels/<train|val|test>/*.txt    (YOLO: class cx cy w h, values 0-1)
 
-The source folder is never changed. After importing, run
-scripts/check_dataset.py on <dest>.
+The source folder is never changed. Imports are all-or-nothing: the source and
+destination are checked first, and if anything fails half way, the folders
+created by that import are removed again.
+After importing, run scripts/check_dataset.py on <dest>.
 
     import_yolo_dataset("downloads/birds_yolo", "data/extra_birds")
     import_roboflow("downloads/roboflow_export", "data/extra_birds")
@@ -27,6 +29,8 @@ SPLIT_ALIASES = {
 }
 
 
+# ---------- small helpers ----------
+
 def _start_split(dest, split):
     """Make the folders for one split. Refuse to mix into an existing split."""
     dest = Path(dest)
@@ -34,6 +38,7 @@ def _start_split(dest, split):
         raise FileExistsError(f"{dest / 'images' / split} already exists. Delete it first.")
     (dest / "images" / split).mkdir(parents=True)
     (dest / "labels" / split).mkdir(parents=True)
+
 
 def _remove_split(dest, split):
     """Undo _start_split (used when an import fails half way)."""
@@ -43,11 +48,11 @@ def _remove_split(dest, split):
             (Path(dest) / kind).rmdir()  # only works if it is now empty
         except OSError:
             pass
- 
- 
+
+
 def _import_all(jobs, dest):
-    """jobs = {split: function}. Checks the destination first, then runs all
-    jobs. If one fails, the splits already imported are removed again."""
+    """jobs = {split: (function, arguments)}. Checks the destination first,
+    then runs all jobs. If one fails, the splits already imported are removed."""
     for split in jobs:
         if (Path(dest) / "images" / split).exists():
             raise FileExistsError(f"{Path(dest) / 'images' / split} already exists. "
@@ -55,19 +60,21 @@ def _import_all(jobs, dest):
     done, counts = [], {}
     try:
         for split, job in jobs.items():
-            counts[split] = job()
+            function, args = job
+            counts[split] = function(*args)
             done.append(split)
     except Exception:
         for split in done:
             _remove_split(dest, split)
         raise
     return counts
- 
- 
+
+
 def _both_map_error(first, second, split):
     return ValueError(f"Both '{first}' and '{second}' map to '{split}'. "
                       "Remove or rename one of them, then try again.")
- 
+
+
 def _copy_pairs(img_dir, lbl_dir, dest, split):
     """Copy images and their .txt labels. Returns number of images."""
     _start_split(dest, split)
@@ -88,7 +95,7 @@ def _copy_pairs(img_dir, lbl_dir, dest, split):
 
 
 # ---------- YOLO ----------
- 
+
 def _find_yolo_sources(src):
     """{split: (folder name, image dir, label dir)}. Stops if two folders
     (e.g. val/ and valid/) would both become the same split."""
@@ -105,11 +112,11 @@ def _find_yolo_sources(src):
     if not found:
         raise ValueError(f"No train/val/test image folders found in {src}")
     return found
- 
- 
+
+
 def import_yolo_dataset(src, dest):
     """YOLO folders -> our layout. Returns {split: number of images}.
- 
+
     Understands two layouts:
       A)  src/images/<split>/   src/labels/<split>/
       B)  src/<split>/images/   src/<split>/labels/     (Roboflow style)
@@ -119,13 +126,13 @@ def import_yolo_dataset(src, dest):
     jobs = {s: (_copy_pairs, (img, lbl, dest, s))
             for s, (_, img, lbl) in found.items()}
     return _import_all(jobs, dest)
- 
- 
+
+
 # ---------- COCO ----------
- 
+
 def import_coco_dataset(json_path, images_dir, dest, split, class_map=None):
     """One COCO .json file -> one split of our layout. Returns number of images.
- 
+
     COCO boxes are pixels [x, y, width, height]. YOLO wants 0-1 centre values.
     class_map = {coco_category_id: our_class}. Default: every category -> 0 (bird).
     """
@@ -138,7 +145,7 @@ def import_coco_dataset(json_path, images_dir, dest, split, class_map=None):
             if a.get("iscrowd", 0):  # skip 'crowd' blobs, they are not single boxes
                 continue
             boxes.setdefault(a["image_id"], []).append(a)
- 
+
         n, missing = 0, 0
         for im in data["images"]:
             src_img = images_dir / im["file_name"]
@@ -147,12 +154,12 @@ def import_coco_dataset(json_path, images_dir, dest, split, class_map=None):
                 continue
             name = Path(im["file_name"]).name
             shutil.copy2(src_img, Path(dest) / "images" / split / name)
- 
+
             width, height = im.get("width"), im.get("height")
             if not width or not height:
                 with Image.open(src_img) as pil:
                     width, height = pil.size
- 
+
             lines = []
             for a in boxes.get(im["id"], []):
                 cls = 0 if class_map is None else class_map.get(a["category_id"])
@@ -171,17 +178,17 @@ def import_coco_dataset(json_path, images_dir, dest, split, class_map=None):
     except Exception:
         _remove_split(dest, split)
         raise
- 
+
     if missing:
         warnings.warn(f"{missing} images listed in the json were not found in {images_dir}")
     return n
- 
- 
+
+
 # ---------- Roboflow ----------
- 
+
 def import_roboflow(src, dest):
     """Roboflow export (YOLO or COCO) -> our layout. Returns {split: number of images}.
- 
+
     Roboflow folders look like  src/train/  src/valid/  src/test/.
     COCO exports have an _annotations.coco.json inside each split folder.
     """
