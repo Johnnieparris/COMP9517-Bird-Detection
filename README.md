@@ -128,6 +128,22 @@ Only one class: 0 = bird
 
 The analysis is only performed on the test data. evalutation.py only works on this data.
 
+Step 11:
+Save overlay pictures of one method's predictions against the real boxes.
+ 
+    GREEN = TP  correct detection (found a real bird)
+    RED   = FP  false alarm (detected a bird that is not there)
+    BLUE  = FN  missed bird (a real bird nobody found)
+ 
+Uses the same matching and settings as src/evaluation.py, so the pictures agree
+with the scores in your report. Use for report figures and the video demo.
+ 
+    python scripts/make_overlays.py m1                       # 12 random test images
+    python scripts/make_overlays.py m1 --pick worst --n 8    # images with the most mistakes
+    python scripts/make_overlays.py m1 --pick best --n 8     # cleanest images
+    python scripts/make_overlays.py m1 --ids test_0003,test_0010
+    python scripts/make_overlays.py m1 --pick all            # every image (for a video)
+ 
 
 
 Additional Information:

@@ -14,6 +14,7 @@ What it does:
        empty    finds nothing                        -> should score 0
   3. Adds two BROKEN files, which evaluation.py must report and skip.
   4. Runs evaluation.py on it all and checks the answers.
+  5. Checks the TP/FP/FN counts and the overlay pictures (make_overlays.py).
 """
 import argparse
 import contextlib
@@ -31,8 +32,10 @@ from PIL import Image  # noqa: E402
 
 from data.dataset import load_split  # noqa: E402
 from data.split import official_split, save_split_manifest  # noqa: E402
-from evaluation import evaluate_folder  # noqa: E402
-from predictions import save_predictions  # noqa: E402
+from evaluation import classify_detections, evaluate_folder  # noqa: E402
+from predictions import load_predictions, save_predictions  # noqa: E402
+
+import make_overlays  # noqa: E402  (scripts/make_overlays.py)
 
 W, H = 200, 150                                   # fake image size
 SPLIT_SIZES = {"train": 10, "val": 30, "test": 20}
@@ -214,6 +217,77 @@ def main():
     check("cannot load the test images" in text and "ghost_image" in text,
           "missing image reported by name")
     check(results == [], "nothing is scored with an incomplete test set")
+
+    print("\n=== Test 5: TP / FP / FN counts agree with the scores ===\n")
+    test_records = load_split(root, "test")
+    print("Checks:")
+    for method in METHODS:
+        preds = load_predictions(method, "test", folder)
+        tot = {k: 0 for k in ("tp", "fp", "fn")}
+        for rec in test_records:
+            found = classify_detections(preds.get(rec.image_id, np.zeros((0, 5))), rec.boxes)
+            for k in tot:
+                tot[k] += len(found[k])
+        r = by[(method, "test")]
+        check((tot["tp"], tot["fp"], tot["fn"]) == (r["tp"], r["fp"], r["fn"]),
+              f"{method}: TP/FP/FN = {tot['tp']}/{tot['fp']}/{tot['fn']} matches evaluate()")
+
+    print("\n=== Test 6: overlay pictures (make_overlays.py) ===\n")
+
+    def overlays(method, *extra, name=None):
+        out = tmp / "overlays" / (name or method)
+        argv = [method, "--root", str(root), "--predictions", str(folder),
+                "--manifest", str(manifest), "--out", str(out), *extra]
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            code = make_overlays.main(argv)
+        return code, buffer.getvalue(), out
+
+    def colour_pixels(out):
+        """Count pure TP/FP/FN colour pixels in the picture area (not the header strip)."""
+        total = {k: 0 for k in make_overlays.COLORS}
+        for file in sorted(out.glob("*.png")):
+            img = np.array(Image.open(file).convert("RGB"))[make_overlays.strip_height(W):]
+            for k, c in make_overlays.COLORS.items():
+                total[k] += int((img == np.array(c)).all(axis=2).sum())
+        return total
+
+    print("Checks:")
+    code, text, out = overlays("perfect", "--pick", "all")
+    c = colour_pixels(out)
+    check(code == 0 and len(list(out.glob("*.png"))) == SPLIT_SIZES["test"], "--pick all saves every test image")
+    check(c["tp"] > 0 and c["fp"] == 0 and c["fn"] == 0, "perfect: only green boxes")
+    size = Image.open(next(out.glob("*.png"))).size
+    check(size == (W, H + make_overlays.strip_height(W)), f"picture = image + header strip {size}")
+
+    code, text, out = overlays("empty", "--pick", "all")
+    c = colour_pixels(out)
+    check(c["fn"] > 0 and c["tp"] == 0 and c["fp"] == 0, "empty: only blue boxes (every bird missed)")
+
+    code, text, out = overlays("random", "--pick", "all")
+    c = colour_pixels(out)
+    check(c["fp"] > 0 and c["fn"] > 0, "random: has red false alarms and blue misses")
+
+    code, text, out = overlays("noisy", "--pick", "worst", "--n", "3")
+    check(code == 0 and len(list(out.glob("*.png"))) == 3, "--pick worst --n 3 saves 3 pictures")
+
+    _, _, out_a = overlays("noisy", "--pick", "random", "--n", "5", "--seed", "7", name="r1")
+    _, _, out_b = overlays("noisy", "--pick", "random", "--n", "5", "--seed", "7", name="r2")
+    names = lambda o: sorted(f.name for f in o.glob("*.png"))  # noqa: E731
+    check(len(names(out_a)) == 5 and names(out_a) == names(out_b), "same --seed picks the same images")
+
+    code, text, out = overlays("noisy", "--ids", "test_0001,test_0002", name="ids")
+    check(code == 0 and names(out) == ["test_0001.png", "test_0002.png"], "--ids saves the images asked for")
+    code, text, _ = overlays("noisy", "--ids", "test_0001,nope")
+    check(code == 1 and "nope" in text, "unknown --ids is reported")
+
+    code, text, out = overlays("noisy", "--pick", "all", "--max-width", "100", "--format", "jpg")
+    check(Image.open(next(out.glob("*.jpg"))).width == 100, "--max-width and --format jpg work")
+
+    code, text, _ = overlays("ghost_method")
+    check(code == 1 and "not found" in text, "unpublished method gives a clear message")
+    code, text, _ = overlays("broken")
+    check(code == 1 and "problem" in text, "broken prediction file is refused")
 
     if cleanup:
         cleanup.cleanup()
