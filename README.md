@@ -79,6 +79,73 @@ Labels: YOLO .txt, one bird per line: class cx cy w h (values 0–1)
 Example: 0 0.512 0.483 0.072 0.095
 Only one class: 0 = bird
 
+Step 10: 
+Save your predictions for analysis
+
+Every method saves its predictions in the same format, so they can be scored and compared fairly. Use the sys.path lines from Step 7 first.
+
+"""
+from evaluation import run_and_time, evaluate, print_results
+from predictions import save_predictions
+
+records = load_split_from_manifest(DEFAULT_ROOT, manifest, "val")
+
+preds, timing = run_and_time(records, my_method)   # my_method(image) -> (N, 5) array
+print_results(evaluate(records, preds, timing), "Method 1")
+
+save_predictions("m1", "val", records, preds)      # creates predictions/m1_val.csv
+"""
+
+Rules:
+
+my_method returns one row per detected bird: x1, y1, x2, y2, score (pixels, same corners as record.boxes). Return an empty array if it finds no birds. Methods without a score can use 1.0.
+Keep low-scoring detections too (for YOLO use conf=0.001). Do not filter them out.
+Method name: letters, numbers, - and _ only (e.g. m1, yolo_n).
+Saving again with the same method name and split replaces your old file. Other people's files are never touched.
+Only the best 100 detections per image are saved. (Let me know if this is too little but the highest value in the whole dataset is high 60's)
+Use val while tuning. Save test once, for your final results.
+Always use the same splits/official.json and the shared evaluation.py. Never write your own scoring.
+
+Look at everyone's results together:
+
+"""
+from predictions import load_all_predictions, export_combined_csv
+
+rows = load_all_predictions()      # list of dicts, one per detection, all methods
+export_combined_csv()              # writes predictions/combined.csv
+"""
+
+The predictions/ folder is generated on your own computer and is not stored in git. Add predictions/ to .gitignore. To compare methods, run each method yourself, or send predictions/combined.csv through Drive or Teams.
+
+Data layout
+data/Beach Bird Detection Dataset v1.0/
+├── images/ (train, val, test)
+└── labels/ (train, val, test)
+Images: jpg, jpeg, png
+Labels: YOLO .txt, one bird per line: class cx cy w h (values 0–1)
+Example: 0 0.512 0.483 0.072 0.095
+Only one class: 0 = bird
+
+The analysis is only performed on the test data. evalutation.py only works on this data.
+
+Step 11:
+Save overlay pictures of one method's predictions against the real boxes.
+ 
+    GREEN = TP  correct detection (found a real bird)
+    RED   = FP  false alarm (detected a bird that is not there)
+    BLUE  = FN  missed bird (a real bird nobody found)
+ 
+Uses the same matching and settings as src/evaluation.py, so the pictures agree
+with the scores in your report. Use for report figures and the video demo.
+ 
+    python scripts/make_overlays.py m1                       # 12 random test images
+    python scripts/make_overlays.py m1 --pick worst --n 8    # images with the most mistakes
+    python scripts/make_overlays.py m1 --pick best --n 8     # cleanest images
+    python scripts/make_overlays.py m1 --ids test_0003,test_0010
+    python scripts/make_overlays.py m1 --pick all            # every image (for a video)
+ 
+
+
 Additional Information:
 
 If you want to test an image not in the dataset, here is the process of importing it:
