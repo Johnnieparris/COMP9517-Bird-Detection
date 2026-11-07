@@ -13,14 +13,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(1, str(ROOT / "src"))  # the shared team modules import as `data`, `predictions`
 
 import cv2
 import numpy as np
 
+from predictions import PRED_DIR, save_predictions
 from src.classical.interim_data import DEFAULT_ROOT, load_split
 from src.classical.pipeline import load_config
 from src.classical.quick_eval import ap50, recall_at_iou
-from src.classical.run import draw_overlay, run_split
+from src.classical.run import draw_overlay, rows_to_predictions, run_split
 
 
 def parse_args():
@@ -33,6 +35,9 @@ def parse_args():
     parser.add_argument("--score", action="store_true", help="print AP@0.5 and recall@0.5")
     parser.add_argument("--viz", type=int, default=0, help="save N GT/prediction overlays")
     parser.add_argument("--final", action="store_true", help="required to touch the test split")
+    parser.add_argument("--publish", nargs="?", const=str(PRED_DIR), metavar="DIR",
+                        help="also save the shared team CSV, <DIR>/m1_<split>.csv "
+                             "(default DIR: predictions/)")
     args = parser.parse_args()
 
     # Checked before any data is loaded, so a mistake can't touch the test set.
@@ -77,6 +82,10 @@ def main():
     print(f"{stats['n_images']} images, {stats['n_detections']} detections, "
           f"{stats['n_images_capped']} images at the cap, "
           f"{stats['ms_per_image']:.1f} ms/img -> {out}")
+    if args.publish:
+        path = save_predictions("m1", args.split, records, rows_to_predictions(rows, records),
+                                folder=args.publish)
+        print(f"published -> {path}")
     if args.score:
         print(f"AP@0.5 {ap50(rows, records):.4f}  recall@0.5 {recall_at_iou(rows, records):.4f}")
     if args.viz:
