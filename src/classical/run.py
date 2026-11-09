@@ -2,6 +2,7 @@
 import time
 
 import cv2
+import numpy as np
 from PIL import Image
 
 from src.classical.pipeline import detect
@@ -42,6 +43,18 @@ def run_split(records, cfg):
              "n_images_capped": n_images_capped,
              "ms_per_image": 1000 * detect_seconds / max(len(records), 1)}
     return rows, stats
+
+
+def rows_to_predictions(rows, records):
+    """Prediction rows -> {image_id: (N, 5) array}, the shape save_predictions() wants.
+
+    Every record gets an entry, so images with no detections become empty arrays.
+    """
+    grouped = {record.image_id: [] for record in records}
+    for row in rows:
+        grouped[row["image_id"]].append([row["x1"], row["y1"], row["x2"], row["y2"], row["score"]])
+    return {image_id: np.array(dets, dtype=float).reshape(-1, 5)
+            for image_id, dets in grouped.items()}
 
 
 def draw_overlay(image_bgr, gt_boxes, dets):
