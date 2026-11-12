@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -56,3 +57,43 @@ def test_m1_proposals_need_a_config_path():
 def test_variant_name_describes_the_run():
     cfg = M2Config(feature="concat", clf="gb", hn_rounds=2, proposals="window")
     assert cfg.variant == "concat_gb_hn2_window"
+
+
+def test_sweep_covers_every_shipped_config():
+    """Re-running the sweep must not silently drop rows from the table.
+
+    scripts/sweep_m2.py rebuilds results/m2_comparison.csv from whatever it ran,
+    so a config missing from FULL disappears from the comparison.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+    from sweep_m2 import FULL
+
+    assert sorted(FULL) == sorted(p.stem for p in M2_CONFIGS)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("C", 1.0), ("n_estimators", 50), ("patch", 48), ("seed", 7),
+    ("nms_iou", 0.6), ("m1_config", "configs/other.yaml"),
+])
+def test_hidden_settings_change_the_variant_name(field, value):
+    """Two runs differing in any setting must not share a label."""
+    base = M2Config(feature="concat", clf="gb", proposals="window")
+    other = M2Config(feature="concat", clf="gb", proposals="window", **{field: value})
+    assert base.variant != other.variant
+
+
+def test_default_config_has_no_hash_suffix():
+    """The shipped ablation keeps short readable names."""
+    assert M2Config().variant == "hog_svm_hn1_window"
+    assert M2Config().changed_from_default() == []
+
+
+def test_variant_hash_is_stable_and_order_independent():
+    first = M2Config(patch=48, seed=3).variant
+    second = M2Config(seed=3, patch=48).variant
+    assert first == second and "_cfg" in first
+
+
+def test_window_percentiles_list_and_tuple_are_equal():
+    """A YAML list must not look like a change against the tuple default."""
+    assert M2Config(window_percentiles=[25, 50, 75]).changed_from_default() == []

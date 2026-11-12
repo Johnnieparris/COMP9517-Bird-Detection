@@ -5,7 +5,9 @@ Mirrors src/classical/pipeline.load_config so both methods are driven the same w
     from src.ml.config import load_config
     cfg = load_config("configs/m2_concat_gb.yaml")
 """
-from dataclasses import dataclass, field
+import dataclasses
+import hashlib
+from dataclasses import dataclass
 from typing import Optional, Sequence
 
 import yaml
@@ -13,6 +15,11 @@ import yaml
 FEATURES = ("hog", "lbp", "colour", "concat")
 CLASSIFIERS = ("svm", "rf", "gb")
 PROPOSALS = ("window", "blob", "m1")
+
+# Settings spelled out in the readable part of the variant name. Everything else
+# goes through the digest below, so no two configs can share a label.
+NAMED_IN_VARIANT = ("feature", "clf", "hn_rounds", "proposals", "box_regression",
+                    "boxreg_min_iou", "proposal_neg_per_image", "calibrate", "fraction")
 
 
 @dataclass
@@ -87,12 +94,35 @@ class M2Config:
         if self.patch < 8:
             raise ValueError(f"patch must be at least 8 px, got {self.patch}")
 
+    def changed_from_default(self):
+        """Settings that differ from the defaults and are not named in `variant`.
+
+        Returns a sorted list of "field=value" strings. Sequences are compared as
+        tuples so a YAML list and a tuple of the same numbers count as equal.
+        """
+        def normalise(value):
+            return tuple(value) if isinstance(value, (list, tuple)) else value
+
+        defaults = M2Config()
+        out = []
+        for f in dataclasses.fields(self):
+            if f.name in NAMED_IN_VARIANT:
+                continue
+            mine = normalise(getattr(self, f.name))
+            if mine != normalise(getattr(defaults, f.name)):
+                out.append(f"{f.name}={mine!r}")
+        return sorted(out)
+
     @property
     def variant(self):
         """Short name used in file names and the comparison table.
 
         Must separate every row of the ablation, or two runs collide under one
-        label in results/m2_comparison.csv.
+        label in results/m2_comparison.csv. The readable part covers the settings
+        the ablation varies; the trailing `_cfg<hash>` covers everything else, so
+        changing C, patch, n_estimators, m1_config, seed and so on cannot
+        silently reuse another run's label. The hash is absent when those are all
+        at their defaults, which keeps the common names short.
         """
         name = f"{self.feature}_{self.clf}_hn{self.hn_rounds}_{self.proposals}"
         if self.box_regression:
@@ -103,6 +133,9 @@ class M2Config:
             name += "_cal"
         if self.fraction < 1.0:
             name += f"_frac{self.fraction:g}"
+        changed = self.changed_from_default()
+        if changed:
+            name += "_cfg" + hashlib.sha1("|".join(changed).encode()).hexdigest()[:6]
         return name
 
 

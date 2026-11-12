@@ -135,8 +135,8 @@ def main():
              "x2": float(d[2]), "y2": float(d[3]), "score": float(d[4])}
             for image_id in sorted(predictions) for d in predictions[image_id]]
     out.write_text(json.dumps(rows))
-    meta = {"split": args.split, "limit": args.limit, "config": dataclasses.asdict(cfg),
-            "config_path": args.config,
+    meta = {"split": args.split, "limit": args.limit, "train_limit": args.train_limit,
+            "config": dataclasses.asdict(cfg), "config_path": args.config,
             "stats": {"n_images": len(eval_records), "n_detections": n_detections,
                       "ms_per_image": timing["ms_per_image"]},
             "train_time_s": detector.train_seconds, "platform": platform.platform(),

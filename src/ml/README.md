@@ -85,8 +85,14 @@ $PY scripts/proposal_recall_m2.py --split val
 $PY scripts/plot_features_m2.py --split val --n 3
 ```
 
-Finished variants are skipped, so an interrupted sweep resumes where it stopped.
-Add `--redo` to recompute everything.
+Finished variants are skipped, so an interrupted sweep resumes where it stopped —
+but only if the earlier run used the same `--limit` and `--train-limit`, so a
+cheap `--quick --limit 60` run is never reused as if it were a full one. Add
+`--redo` to recompute everything.
+
+`compare_m2.py` refuses to build a table that mixes partial and full runs, since
+a 60-image row cannot be ranked against a 291-image one. Pass `--allow-partial`
+if you want one anyway; the `n_images` column records what each row actually saw.
 
 The test split needs `--final` and refuses `--score`:
 

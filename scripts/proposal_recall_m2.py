@@ -116,7 +116,7 @@ def main():
               f"{row['candidates_per_image']:7.0f} cands/img  {row['ms_per_image']:6.1f} ms/img")
 
     with open(args.out, "w", newline="") as f:
-        writer = csv.DictWriter(f, list(table[0]))
+        writer = csv.DictWriter(f, list(table[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(table)
     print(f"\n-> {args.out}")
