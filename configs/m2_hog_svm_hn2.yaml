@@ -1,0 +1,10 @@
+# Ablation: two hard negative rounds.
+method: m2
+proposals: window
+feature: hog
+clf: svm
+C: 0.01
+patch: 32
+hn_rounds: 2
+nms_iou: 0.4
+max_detections: 300

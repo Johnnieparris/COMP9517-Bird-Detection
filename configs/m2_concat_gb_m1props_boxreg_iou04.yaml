@@ -1,0 +1,18 @@
+# Best variant plus R-CNN-style box regression (src/ml/boxreg.py).
+#
+# Motivation from results/m2_proposal_recall.csv: with these candidates 56% of
+# birds are overlapped at IoU 0.3 but only 30% reach IoU 0.5, and 82% have a
+# candidate centred on them. The centres are right and the sizes are wrong, so a
+# learned size correction should lift recall without adding any candidates.
+method: m2
+proposals: m1
+m1_config: configs/m1_seg_proposals.yaml
+feature: concat
+clf: gb
+patch: 32
+hn_rounds: 1
+box_regression: true
+boxreg_min_iou: 0.4
+boxreg_alpha: 1000.0
+nms_iou: 0.4
+max_detections: 300

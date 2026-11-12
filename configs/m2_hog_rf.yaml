@@ -1,0 +1,10 @@
+# Classifier ablation: hog descriptor with a class-balanced random forest.
+method: m2
+proposals: window
+feature: hog
+clf: rf
+n_estimators: 200
+patch: 32
+hn_rounds: 1
+nms_iou: 0.4
+max_detections: 300

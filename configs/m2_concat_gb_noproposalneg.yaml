@@ -1,0 +1,12 @@
+# Ablation: the best window variant WITHOUT negatives sampled from the candidate
+# boxes, i.e. random background crops only. Isolates what that sampling is worth,
+# since it roughly doubles training time.
+method: m2
+proposals: window
+feature: concat
+clf: gb
+patch: 32
+hn_rounds: 1
+proposal_neg_per_image: 0
+nms_iou: 0.4
+max_detections: 300
