@@ -1,0 +1,11 @@
+# Best variant on val (see docs/notes/m2-week9.md): HOG + LBP + colour with
+# histogram gradient boosting. Boosted trees are the only classifier tried that
+# gains from concatenating the three descriptor families.
+method: m2
+proposals: window
+feature: concat
+clf: gb
+patch: 32
+hn_rounds: 1
+nms_iou: 0.4
+max_detections: 300

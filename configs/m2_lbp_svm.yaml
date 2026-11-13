@@ -1,0 +1,10 @@
+# Feature ablation: lbp descriptor only, classifier held fixed.
+method: m2
+proposals: window
+feature: lbp
+clf: svm
+C: 0.01
+patch: 32
+hn_rounds: 1
+nms_iou: 0.4
+max_detections: 300

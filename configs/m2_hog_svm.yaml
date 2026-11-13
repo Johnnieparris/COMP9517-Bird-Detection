@@ -1,0 +1,11 @@
+# Method 2 baseline: HOG + linear SVM, one hard negative round.
+# Week 8 starting point, before the feature and classifier ablation.
+method: m2
+proposals: window
+feature: hog
+clf: svm
+C: 0.01
+patch: 32
+hn_rounds: 1
+nms_iou: 0.4
+max_detections: 300

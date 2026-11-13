@@ -7,3 +7,5 @@ scipy==1.18.1
 kagglehub
 ultralytics
 matplotlib
+scikit-learn==1.9.1
+scikit-image==0.26.0
