@@ -173,6 +173,60 @@ def counting_error(records, predictions, score_thr=SCORE_THR):
     return {"mae": float(np.abs(errors).mean()), "bias": float(errors.mean())}
 
 
+def pr_curve(records, predictions, iou_thr=IOU_THR):
+    """Points of the precision-recall curve (one point per detection, best score first).
+    Returns a dict of arrays: 'score', 'precision', 'recall'. All detections are used."""
+    scores, correct, n_gt = _collect(records, predictions, iou_thr)
+    order = np.argsort(-scores, kind="stable")
+    scores, correct = scores[order], correct[order]
+    tp, fp = np.cumsum(correct), np.cumsum(~correct)
+    recall = tp / n_gt if n_gt else np.zeros(len(tp))
+    precision = tp / np.maximum(tp + fp, 1)
+    return {"score": scores, "precision": precision, "recall": recall}
+
+
+def best_f1_threshold(records, predictions, iou_thr=IOU_THR):
+    """The score cut-off that gives the highest F1 (keep detections with score >= thr).
+    Returns {'thr', 'f1', 'precision', 'recall'}, or None if nothing was detected correctly.
+    Choose this on VAL, then reuse it unchanged on test."""
+    c = pr_curve(records, predictions, iou_thr)
+    s, p, r = c["score"], c["precision"], c["recall"]
+    if len(s) == 0 or r.max() == 0:
+        return None
+    total = p + r
+    f1 = np.where(total > 0, 2 * p * r / np.where(total > 0, total, 1), 0.0)
+    f1 = np.where(np.r_[s[1:] != s[:-1], True], f1, -1.0)  # only cut where the score changes
+    i = int(f1.argmax())
+    return {"thr": float(s[i]), "f1": float(f1[i]), "precision": float(p[i]), "recall": float(r[i])}
+
+
+def gt_found_mask(preds, gts, iou_thr=IOU_THR, score_thr=SCORE_THR):
+    """For one image: True for every real box that was found (same matching as evaluate())."""
+    preds = np.asarray(preds, dtype=float).reshape(-1, 5)
+    preds = preds[preds[:, 4] >= score_thr]
+    preds = preds[np.argsort(-preds[:, 4], kind="stable")]
+    gts = np.asarray(gts, dtype=float).reshape(-1, 4)
+    match = _greedy_match(preds, gts, iou_thr)
+    found = np.zeros(len(gts), dtype=bool)
+    found[match[match >= 0]] = True
+    return found
+
+
+def load_records(root=None, split="test", manifest_path=None):
+    """Real images and boxes for one split. Uses splits/official.json when it exists,
+    otherwise the dataset's own train/val/test folders."""
+    from data.dataset import DEFAULT_ROOT, load_split
+    from data.split import load_split_from_manifest, load_split_manifest
+
+    root = Path(DEFAULT_ROOT if root is None else root)
+    if manifest_path is None:
+        manifest_path = Path(__file__).resolve().parents[1] / "splits" / "official.json"
+    manifest_path = Path(manifest_path)
+    if manifest_path.exists():
+        return load_split_from_manifest(root, load_split_manifest(manifest_path), split)
+    return load_split(root, split)
+
+
 def evaluate(records, predictions, timing=None, iou_thr=IOU_THR, score_thr=SCORE_THR):
     """Everything in one dict. Use this for your report tables.
     timing = the dict from run_and_time() (optional)."""

@@ -234,14 +234,22 @@ def main():
 
     print("\n=== Test 6: overlay pictures (make_overlays.py) ===\n")
 
-    def overlays(method, *extra, name=None):
-        out = tmp / "overlays" / (name or method)
+    overlay_base = tmp / "overlays"
+
+    def run_folders():
+        return sorted(d.name for d in overlay_base.iterdir()) if overlay_base.exists() else []
+
+    def overlays(method, *extra):
+        """Run make_overlays. Returns (exit code, printed text, the NEW run folder or None)."""
+        before = set(run_folders())
         argv = [method, "--root", str(root), "--predictions", str(folder),
-                "--manifest", str(manifest), "--out", str(out), *extra]
+                "--manifest", str(manifest), "--out", str(overlay_base), *extra]
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
             code = make_overlays.main(argv)
-        return code, buffer.getvalue(), out
+        new = sorted(set(run_folders()) - before)
+        assert len(new) <= 1, new
+        return code, buffer.getvalue(), (overlay_base / new[0] if new else None)
 
     def colour_pixels(out):
         """Count pure TP/FP/FN colour pixels in the picture area (not the header strip)."""
@@ -271,23 +279,41 @@ def main():
     code, text, out = overlays("noisy", "--pick", "worst", "--n", "3")
     check(code == 0 and len(list(out.glob("*.png"))) == 3, "--pick worst --n 3 saves 3 pictures")
 
-    _, _, out_a = overlays("noisy", "--pick", "random", "--n", "5", "--seed", "7", name="r1")
-    _, _, out_b = overlays("noisy", "--pick", "random", "--n", "5", "--seed", "7", name="r2")
+    worst_name = out.name
+    _, _, out_a = overlays("noisy", "--pick", "random", "--n", "5", "--seed", "7")
+    _, _, out_b = overlays("noisy", "--pick", "random", "--n", "5", "--seed", "7")
     names = lambda o: sorted(f.name for f in o.glob("*.png"))  # noqa: E731
     check(len(names(out_a)) == 5 and names(out_a) == names(out_b), "same --seed picks the same images")
+    check(out_a != out_b, "the same command run twice makes two different folders")
 
-    code, text, out = overlays("noisy", "--ids", "test_0001,test_0002", name="ids")
+    code, text, out = overlays("noisy", "--ids", "test_0001,test_0002")
     check(code == 0 and names(out) == ["test_0001.png", "test_0002.png"], "--ids saves the images asked for")
+    ids_name = out.name
+    folders_before = run_folders()
     code, text, _ = overlays("noisy", "--ids", "test_0001,nope")
     check(code == 1 and "nope" in text, "unknown --ids is reported")
+    check(run_folders() == folders_before, "a failed run leaves no folder behind")
 
     code, text, out = overlays("noisy", "--pick", "all", "--max-width", "100", "--format", "jpg")
     check(Image.open(next(out.glob("*.jpg"))).width == 100, "--max-width and --format jpg work")
 
-    code, text, _ = overlays("ghost_method")
-    check(code == 1 and "not found" in text, "unpublished method gives a clear message")
+    code, text, none_made = overlays("ghost_method")
+    check(code == 1 and "not found" in text and none_made is None, "unpublished method gives a clear message")
     code, text, _ = overlays("broken")
     check(code == 1 and "problem" in text, "broken prediction file is refused")
+
+    # folder names: run number + how the pictures were made
+    import re
+    all_runs = run_folders()
+    numbers = [int(re.match(r"run(\d+)_", n).group(1)) for n in all_runs]
+    check(len(set(all_runs)) == len(all_runs) and sorted(numbers) == list(range(1, len(numbers) + 1)),
+          f"run numbers count up with no gaps ({numbers[0]}..{numbers[-1]})")
+    check(re.fullmatch(r"run\d{3}_noisy_test_worst3_score0\.5_iou0\.5", worst_name) is not None,
+          f"name says how it was made: {worst_name}")
+    check(ids_name.endswith("noisy_test_ids-test_0001-test_0002_score0.5_iou0.5"), f"ids in the name: {ids_name}")
+    code, text, out = overlays("noisy", "--pick", "random", "--score-thr", "0.1", "--iou-thr", "0.3",
+                               "--max-width", "100", "--format", "jpg", "--split", "val")
+    check("val_random12-seed42_score0.1_iou0.3_w100_jpg" in out.name, f"all options in the name: {out.name}")
 
     if cleanup:
         cleanup.cleanup()
