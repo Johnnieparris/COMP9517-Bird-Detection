@@ -1,5 +1,7 @@
 {
     "python.analysis.extraPaths": ["${workspaceFolder}/src"],
+    "python.defaultInterpreterPath": "/Users/bjpj08/miniforge3/envs/birds/bin/python",
+    "python.condaPath": "/Users/bjpj08/miniforge3/bin/conda",
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda"
 }

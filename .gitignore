@@ -12,3 +12,4 @@ results/*
 *.pkl
 
 .DS_Store
+/colab/
