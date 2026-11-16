@@ -1,5 +1,5 @@
 # Paths are relative to the repository. A fresh run directory is created each time.
-model: yolo11n.pt
+model: yolov5s-cls.pt
 data_root: data/augmented_birds_baseline
 augmentation_copies: 1
 augmentation_seed: 42
