@@ -153,7 +153,7 @@ def write_timeline(run_dir, history):
     rows = []
     for event in history:
         rows.append({
-            "run_id": event["run_id"], "method": event.get("method", "yolov5s-cls"), "family": "ml",
+            "run_id": event["run_id"], "method": event.get("method", "yolo11n"), "family": "ml",
             "split": "val", "epoch": event["epoch"], "timestamp_utc": event["timestamp_utc"],
             "checkpoint": event["checkpoint"], "elapsed_s": event["elapsed_s"],
             **event["scores"],
@@ -205,7 +205,7 @@ class MilestoneRecorder:
         save_predictions("yolo", "val", self.records, predictions, folder=milestone)
         event = {
             "run_id": self.run_dir.name, "epoch": epoch, "timestamp_utc": utc_now(),
-            "method": self.metadata.get("model", "yolov5s-cls"),
+            "method": self.metadata.get("model", "yolo11n"),
             "checkpoint": str(checkpoint), "checkpoint_sha256": sha256(checkpoint),
             "elapsed_s": self.previous_elapsed + time.perf_counter() - self.started,
             "scores": scores, "hyperparameters": hyperparameters,
@@ -320,7 +320,10 @@ def train(config_path, run_name=None, epochs=None, device=None, output_root=None
     validation_root = resolve_path(config.pop("validation_root")) if config.get("validation_root") else None
     copies = config.pop("augmentation_copies", 1)
     augmentation_seed = config.pop("augmentation_seed", 42)
-    weights = config.pop("model", "yolov5s-cls.pt")
+    weights = config.pop("model", "yolo11n.pt")
+    print(f"Training script: {Path(__file__).resolve()}", flush=True)
+    print(f"Training config: {config_path}", flush=True)
+    print(f"Model weights: {weights}", flush=True)
     if config.get("epochs", 0) < 1:
         raise ValueError("epochs must be positive")
     if config.get("optimizer", "auto").lower() == "auto":
