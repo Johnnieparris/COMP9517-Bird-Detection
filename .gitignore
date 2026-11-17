@@ -7,6 +7,12 @@ __pycache__/
 predictions/
 results/*
 !results/*.csv
+!results/README.md
+!results/manifest.json
+!results/runs/
+!results/timelines/
+!results/tuning/
+/archive/
 *.pt
 *.pth
 *.pkl

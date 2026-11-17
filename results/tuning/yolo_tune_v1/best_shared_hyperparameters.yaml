@@ -1,0 +1,8 @@
+box: 9.22166
+cls: 0.64678
+dfl: 1.12881
+lr0: 3.0e-05
+lrf: 0.10658
+momentum: 0.937
+warmup_epochs: 0.61091
+weight_decay: 0.00069

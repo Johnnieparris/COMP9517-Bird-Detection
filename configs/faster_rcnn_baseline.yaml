@@ -1,0 +1,23 @@
+# Reuse the exact offline export used by YOLO; never augment a second time.
+data_root: data/augmented_birds_baseline
+validation_root: data/augmented_birds_baseline
+augmentation_copies: 1
+augmentation_seed: 42
+pretrained: true
+epochs: 50
+imgsz: 640
+batch: 1
+accumulation_steps: 2
+device: auto
+workers: 2
+optimizer: SGD
+lr0: 0.005
+momentum: 0.9
+weight_decay: 0.0005
+lrf: 0.1
+warmup_epochs: 1
+grad_clip: 10.0
+trainable_backbone_layers: 3
+amp: false
+seed: 42
+patience: 0

@@ -1,0 +1,3 @@
+method: faster_rcnn
+checkpoint: models/faster_rcnn/best.pt
+imgsz: 640
