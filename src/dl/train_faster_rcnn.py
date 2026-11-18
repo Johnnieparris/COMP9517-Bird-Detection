@@ -1,6 +1,6 @@
 """Train torchvision Faster R-CNN with the same data and evaluator as YOLO.
 
-python -m src.ml.train_faster_rcnn --config configs/faster_rcnn_baseline.yaml
+python -m src.dl.train_faster_rcnn --config configs/faster_rcnn_baseline.yaml
 """
 import argparse
 from datetime import datetime, timezone
@@ -19,9 +19,9 @@ import torch
 from torch.utils.data import DataLoader
 import yaml
 
-from src.ml.dataset import BirdDetectionDataset, detection_collate
+from src.dl.dataset import BirdDetectionDataset, detection_collate
 # Reuse the existing split guards and timeline format without importing Ultralytics.
-from src.ml.train_yolo import (REPO, DEFAULT_ROOT, IOU_THR, SCORE_THR, MAX_PER_IMAGE,
+from src.dl.train_yolo import (REPO, DEFAULT_ROOT, IOU_THR, SCORE_THR, MAX_PER_IMAGE,
     prepare_data, resolve_path, sha256, utc_now, write_json, write_timeline,
     evaluate, print_results, run_and_time, save_predictions)
 
@@ -257,7 +257,7 @@ def train(config_path=None, run_name=None, epochs=None, device=None, output_root
             "selection_metric": "mAP50", "timing": "batch=1, 3 warmups, excludes image loading"})
     metadata.setdefault("started_utc", utc_now())
     metadata["source_sha256"] = {str(p.relative_to(REPO)): sha256(p) for p in
-        (Path(__file__).resolve(), REPO / "src/ml/dataset.py", REPO / "src/evaluation.py")}
+        (Path(__file__).resolve(), REPO / "src/dl/dataset.py", REPO / "src/evaluation.py")}
     write_json(run_dir / "run.json", metadata)
     try:
         _, records, dataset_info = prepare_data(root, run_dir, config["augmentation_copies"],

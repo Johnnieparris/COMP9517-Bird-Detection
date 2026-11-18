@@ -10,8 +10,8 @@ import yaml
 
 from src.data import validation
 from src.data.dataset import load_split
-from src.ml.augment import AugmentConfig, augment_image, export_dataset, transform_boxes
-from src.ml.dataset import BirdDetectionDataset, detection_collate
+from src.dl.augment import AugmentConfig, augment_image, export_dataset, transform_boxes
+from src.dl.dataset import BirdDetectionDataset, detection_collate
 
 
 IDENTITY = AugmentConfig(noise_std=0, horizontal_flip=0, vertical_flip=0,

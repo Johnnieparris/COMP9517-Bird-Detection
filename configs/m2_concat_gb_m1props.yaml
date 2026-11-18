@@ -1,0 +1,12 @@
+# Best variant, but fed member B's high-recall Method 1 candidates instead of a
+# sliding window (docs/notes/m1-week8.md hand-off). Far fewer candidates per
+# image, so much faster; the question is what that costs in recall.
+method: m2
+proposals: m1
+m1_config: configs/m1_seg_proposals.yaml
+feature: concat
+clf: gb
+patch: 32
+hn_rounds: 1
+nms_iou: 0.4
+max_detections: 300

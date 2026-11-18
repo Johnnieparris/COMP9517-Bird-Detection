@@ -39,6 +39,13 @@ not evaluated during organization or smoke testing. Both selected ML models
 subsequently completed final test evaluation on 2026-11-18; scores are in
 `results/ml_test_comparison.csv` and predictions in `predictions/*_test.csv`.
 
+For the team's report tables and plots, run `python src/analysis.py`, then open
+`notebooks/results_plots.ipynb` with `SPLIT = "test"`. It writes to the existing
+`analysis/` layout and uses confidence thresholds selected on validation.
+The saved comparison CSVs in `results/` use confidence 0.5, so their precision,
+recall, F1 and counting scores can differ from this report workflow. AP is
+independent of that threshold. No retraining or new test inference is needed.
+
 The configs `configs/yolo_best.yaml` and `configs/faster_rcnn_best.yaml` point to
 the portable weights using repository-relative paths. Loading them never needs
 the old Windows paths or the training archive. The data root defaults to the
@@ -48,7 +55,7 @@ if only the exported dataset is available. Official split IDs still apply.
 API usage for robustness experiments:
 
 ```python
-from src.ml.inference import load_detector
+from src.dl.inference import load_detector
 
 predict, metadata = load_detector("configs/yolo_best.yaml", device="cpu")
 boxes = predict(image_rgb)  # uint8 RGB in; N x 5 pixel XYXY + score out

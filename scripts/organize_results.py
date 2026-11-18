@@ -16,8 +16,8 @@ sys.path.insert(1, str(ROOT / "src"))
 import numpy as np
 import torch
 
-from src.ml.inference import file_sha256
-from src.ml.train_yolo import write_json
+from src.dl.inference import file_sha256
+from src.dl.train_yolo import write_json
 from data.dataset import DEFAULT_ROOT
 from data.split import load_split_manifest, load_split_from_manifest
 from evaluation import evaluate

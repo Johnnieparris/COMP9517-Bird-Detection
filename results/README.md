@@ -1,5 +1,18 @@
 # Results index
 
+The team's report workflow is `python src/analysis.py`, followed by
+`notebooks/results_plots.ipynb` with `SPLIT = "test"`. This uses the existing
+published predictions and writes the shared summaries and plot inputs to
+`analysis/`; that generated folder remains ignored by Git. Deep-learning code
+lives in `src/dl`; `src/ml` belongs to Method 2.
+
+The shared analysis selects each method's confidence threshold from validation
+predictions and applies it to test. The comparison CSVs below retain the
+earlier fixed-confidence-0.5 evaluation, with `score_threshold` recorded in
+each row. Their AP scores agree with shared analysis, while precision, recall,
+F1 and counting scores can differ because of the threshold. Use the shared
+analysis consistently for the final team report; do not mix those protocols.
+
 | File/folder | Purpose |
 | --- | --- |
 | `model_comparison.csv` | Selected YOLO and Faster R-CNN on the official test split; M1 omitted because it has no published test evaluation |

@@ -1,6 +1,6 @@
 """Exhaustive Faster R-CNN grid search ranked by shared validation mAP50.
 
-python -m src.ml.tune_faster_rcnn --device 0 --name faster_rcnn_tune
+python -m src.dl.tune_faster_rcnn --device 0 --name faster_rcnn_tune
 """
 import argparse
 import csv
@@ -12,8 +12,8 @@ import re
 import torch
 import yaml
 
-from src.ml.train_faster_rcnn import TUNABLE_KEYS, load_config, train, validate_config
-from src.ml.train_yolo import resolve_path, utc_now, write_json
+from src.dl.train_faster_rcnn import TUNABLE_KEYS, load_config, train, validate_config
+from src.dl.train_yolo import resolve_path, utc_now, write_json
 
 
 def read_search(path, base):

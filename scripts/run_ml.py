@@ -17,8 +17,8 @@ sys.path.insert(1, str(ROOT / "src"))
 import cv2
 import numpy as np
 
-from src.ml.inference import load_detector
-from src.ml.train_yolo import resolve_path, write_json, utc_now
+from src.dl.inference import load_detector
+from src.dl.train_yolo import resolve_path, write_json, utc_now
 from data.dataset import DEFAULT_ROOT, get_image
 from data.split import load_split_manifest, load_split_from_manifest
 from evaluation import evaluate, print_results, run_and_time, IOU_THR, SCORE_THR

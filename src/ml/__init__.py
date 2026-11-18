@@ -1,1 +1,1 @@
-"""Deep learning data preparation and detector utilities."""
+"""Method 2 (member C): handcrafted features with a trained classifier."""

@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import torch
 
-from src.ml import train_yolo as training
+from src.dl import train_yolo as training
 
 
 def test_prediction_adapter_converts_rgb_and_preserves_shared_contract():

@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from src.ml.train_yolo import (TUNABLE_KEYS, MilestoneRecorder, load_config, prepare_data,
+from src.dl.train_yolo import (TUNABLE_KEYS, MilestoneRecorder, load_config, prepare_data,
     record_saved_checkpoint, resolve_path, select_device, sha256, utc_now, write_json)
 
 TESTED_ULTRALYTICS = "8.4.211"
@@ -101,7 +101,7 @@ def tune(config_path="configs/yolo_colab.yaml", search_path="configs/yolo_tune.y
     evaluation = {"split": "val", "selection_metric": "mAP50", "iou_threshold": 0.5,
         "score_threshold": 0.5, "prediction_confidence": 0.001, "nms_iou": 0.7,
         "timing": "batch=1, 3 warmups, excludes image loading"}
-    from src.ml.train_yolo import IOU_THR, SCORE_THR, MAX_PER_IMAGE
+    from src.dl.train_yolo import IOU_THR, SCORE_THR, MAX_PER_IMAGE
     evaluation.update(iou_threshold=IOU_THR, score_threshold=SCORE_THR, max_detections=MAX_PER_IMAGE)
     state = {"status": "running", "updated_utc": utc_now(), "dataset": dataset,
              "request": request, "native_selection": "Ultralytics fitness",

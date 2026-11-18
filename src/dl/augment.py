@@ -1,6 +1,6 @@
 """Export augmented training data for YOLO and Faster R-CNN.
 
-Run from the repository root: python -m src.ml.augment --copies 3 --seed 42
+Run from the repository root: python -m src.dl.augment --copies 3 --seed 42
 """
 import argparse
 from dataclasses import asdict, dataclass
