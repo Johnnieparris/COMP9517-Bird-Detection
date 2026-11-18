@@ -1,0 +1,10 @@
+# Ablation: no hard negative mining, to measure what the mining is worth.
+method: m2
+proposals: window
+feature: hog
+clf: svm
+C: 0.01
+patch: 32
+hn_rounds: 0
+nms_iou: 0.4
+max_detections: 300

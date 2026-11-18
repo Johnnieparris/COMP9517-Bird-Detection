@@ -1,0 +1,11 @@
+# Best variant with our own Difference-of-Gaussians candidates, for the
+# proposal-source comparison.
+method: m2
+proposals: blob
+blob_threshold: 0.02
+feature: concat
+clf: gb
+patch: 32
+hn_rounds: 1
+nms_iou: 0.4
+max_detections: 300

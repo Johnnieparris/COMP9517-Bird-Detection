@@ -1,0 +1,9 @@
+# Feature ablation: HOG + LBP + colour concatenated, with the rf classifier.
+method: m2
+proposals: window
+feature: concat
+clf: rf
+patch: 32
+hn_rounds: 1
+nms_iou: 0.4
+max_detections: 300

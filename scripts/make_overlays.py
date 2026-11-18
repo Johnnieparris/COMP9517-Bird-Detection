@@ -14,10 +14,19 @@ with the scores in your report. Use for report figures and the video demo.
     python scripts/make_overlays.py m1 --pick all            # every image (for a video)
 
 The method must have published predictions first (see README, Step 10).
-Pictures are saved in overlays/<method>_<split>/ (add overlays/ to .gitignore).
+
+Every run saves into its OWN new folder inside overlays/, so nothing is overwritten.
+The folder name has a run number and says how the pictures were made:
+
+    overlays/run001_m1_test_random12-seed42_score0.5_iou0.5/
+    overlays/run002_m1_test_worst8_score0.5_iou0.5/
+    overlays/run003_m1_val_ids-beach_bird_1674_score0.1_iou0.5/
+
+(add overlays/ to .gitignore)
 """
 import argparse
 import random
+import re
 import sys
 from pathlib import Path
 
@@ -111,6 +120,43 @@ def pick_images(rows, pick, n, seed):
     raise ValueError(pick)
 
 
+# ---------- run folders ----------
+
+def run_name(a):
+    """Folder name text that says how this run was made."""
+    if a.ids:
+        ids = [i.strip() for i in a.ids.split(",") if i.strip()]
+        what = "ids-" + "-".join(ids) if len(ids) <= 3 else f"ids{len(ids)}"
+    elif a.pick == "all":
+        what = "all"
+    elif a.pick == "random":
+        what = f"random{a.n}-seed{a.seed}"
+    else:
+        what = f"{a.pick}{a.n}"
+    parts = [a.method, a.split, what, f"score{a.score_thr:g}", f"iou{a.iou_thr:g}"]
+    if a.max_width:
+        parts.append(f"w{a.max_width}")
+    if a.format != "png":
+        parts.append(a.format)
+    return re.sub(r"[^A-Za-z0-9._-]", "", "_".join(parts))
+
+
+def new_run_folder(base, name):
+    """Make overlays/runNNN_<name>/ with the next free run number. Never reuses a folder."""
+    base = Path(base)
+    base.mkdir(parents=True, exist_ok=True)
+    numbers = [int(m.group(1)) for d in base.iterdir()
+               if d.is_dir() and (m := re.match(r"run(\d+)_", d.name))]
+    n = max(numbers, default=0) + 1
+    while True:
+        folder = base / f"run{n:03d}_{name}"
+        try:
+            folder.mkdir()
+            return folder
+        except FileExistsError:
+            n += 1
+
+
 # ---------- main ----------
 
 def main(argv=None):
@@ -125,7 +171,7 @@ def main(argv=None):
     ap.add_argument("--iou-thr", type=float, default=IOU_THR)
     ap.add_argument("--max-width", type=int, default=0, help="shrink wider pictures (0 = keep size)")
     ap.add_argument("--format", default="png", choices=["png", "jpg"])
-    ap.add_argument("--out", help="output folder (default overlays/<method>_<split>)")
+    ap.add_argument("--out", help="folder that holds the run folders (default overlays/)")
     ap.add_argument("--root", help="dataset folder")
     ap.add_argument("--predictions", help="predictions folder")
     ap.add_argument("--manifest", help="split file (default splits/official.json if it exists)")
@@ -134,7 +180,7 @@ def main(argv=None):
     root = Path(a.root) if a.root else DEFAULT_ROOT
     folder = Path(a.predictions) if a.predictions else PRED_DIR
     manifest = Path(a.manifest) if a.manifest else REPO / "splits" / "official.json"
-    out = Path(a.out) if a.out else REPO / "overlays" / f"{a.method}_{a.split}"
+    base = Path(a.out) if a.out else REPO / "overlays"
 
     # ground truth
     try:
@@ -174,7 +220,7 @@ def main(argv=None):
     else:
         chosen = pick_images(rows, a.pick, a.n, a.seed)
 
-    out.mkdir(parents=True, exist_ok=True)
+    out = new_run_folder(base, run_name(a))  # only now, so failed runs leave nothing behind
     for record, found in chosen:
         image = Image.open(record.image_path).convert("RGB")
         if a.max_width and image.width > a.max_width:
