@@ -35,7 +35,9 @@ partial runs cannot publish an incomplete split into the shared evaluator.
 For final test predictions, use `--split test --final --publish` (without
 `--score` or `--limit`), then run `python src/evaluation.py` to score all published
 test predictions together. This follows M1's test-set guard. The test split was
-not evaluated during organization or smoke testing.
+not evaluated during organization or smoke testing. Both selected ML models
+subsequently completed final test evaluation on 2026-11-18; scores are in
+`results/ml_test_comparison.csv` and predictions in `predictions/*_test.csv`.
 
 The configs `configs/yolo_best.yaml` and `configs/faster_rcnn_best.yaml` point to
 the portable weights using repository-relative paths. Loading them never needs

@@ -6,7 +6,6 @@ the raw runs (under results/ initially, archive/training/ afterward).
 import csv
 import json
 from pathlib import Path
-import platform
 import shutil
 import sys
 
@@ -21,8 +20,8 @@ from src.ml.inference import file_sha256
 from src.ml.train_yolo import write_json
 from data.dataset import DEFAULT_ROOT
 from data.split import load_split_manifest, load_split_from_manifest
-from evaluation import evaluate, run_and_time
-from predictions import MAX_PER_IMAGE, save_predictions
+from evaluation import evaluate
+from predictions import save_predictions
 
 METRICS = ("mAP50", "mAP50_95", "precision", "recall", "f1", "count_mae", "count_bias")
 
@@ -154,15 +153,9 @@ def organize(root=ROOT):
             raise ValueError(f"Checkpoint hash mismatch: {run['name']}")
     for run in selected.values():
         export_model(root, run)
-    compact = []
     for run in runs:
         meta, best = run["metadata"], run["best"]
         is_selected = selected[run["method"]]["name"] == run["name"]
-        compact.append({"method": run["method"], "run": run["name"], "split": "val",
-            "selected": is_selected, "epochs_evaluated": len(run["history"]), "best_epoch": best["epoch"],
-            **{key: best["scores"][key] for key in METRICS}, "score_threshold": .5,
-            "ms_per_image": best["scores"].get("ms_per_image"), "device": meta.get("device"),
-            "platform": meta.get("platform"), "train_images": meta["dataset"]["train_images"]})
         summary = {"run": run["name"], "method": run["method"], "selected": is_selected,
             "status": meta["status"], "epochs_evaluated": len(run["history"]), "best_epoch": best["epoch"],
             "scores": best["scores"], "evaluation": best["evaluation"], "dataset": dataset_summary(run),
@@ -179,25 +172,13 @@ def organize(root=ROOT):
         write_csv(results / "timelines" / f"{run['name']}.csv", timeline)
         if is_selected:
             save_predictions(run["method"], "val", records, run["predictions"], folder=root / "predictions")
-    write_csv(results / "ml_comparison.csv", compact)
-    # Re-evaluate selected M1 with the shared protocol, not its historical best-F1 threshold.
-    from src.classical.pipeline import load_config, detect
-    cfg = load_config(root / "configs/m1_seg_colour_tuned.yaml")
-    def m1_predict(image):
-        dets = detect(image[:, :, ::-1].copy(), cfg)
-        return dets[np.argsort(-dets[:, 4], kind="stable")][:MAX_PER_IMAGE]
-    m1_predictions, m1_timing = run_and_time(records, m1_predict)
-    m1_scores = evaluate(records, m1_predictions, m1_timing)
-    save_predictions("m1", "val", records, m1_predictions, folder=root / "predictions")
-    shared = [{"method": "m1_colour", "split": "val", "mAP50": m1_scores["mAP50"],
-        **{key: m1_scores[key] for key in METRICS[1:]}, "score_threshold": .5,
-        "ms_per_image": m1_scores["ms_per_image"], "device": "cpu", "platform": platform.platform(),
-        "source": "fresh shared evaluation of configs/m1_seg_colour_tuned.yaml"}]
-    for row in compact:
-        if row["selected"]:
-            shared.append({key: row[key] for key in ("method", "split", *METRICS, "score_threshold", "ms_per_image", "device", "platform")})
-            shared[-1]["source"] = row["run"] + " saved validation predictions (scores verified)"
-    write_csv(results / "model_comparison.csv", shared)
+    # Comparison tables are test-only. Never substitute validation scores or
+    # run inference implicitly while organizing training artifacts.
+    from scripts.compare_test_results import RUNS, rebuild
+    if all((results / "evaluation" / f"{method}_test.scores.json").exists() for method in RUNS):
+        rebuild(root)
+    else:
+        print("Test evaluations incomplete; comparison tables left unchanged.")
     tuning_rows = []
     for name, folder in folders.items():
         if not (folder / "shared_trials.json").exists():
