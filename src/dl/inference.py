@@ -5,8 +5,8 @@ from pathlib import Path
 import torch
 import yaml
 
-from src.ml.train_faster_rcnn import build_model, get_device, predict_function as faster_predict
-from src.ml.train_yolo import predict_function as yolo_predict, resolve_path
+from src.dl.train_faster_rcnn import build_model, get_device, predict_function as faster_predict
+from src.dl.train_yolo import predict_function as yolo_predict, resolve_path
 
 
 def file_sha256(path):

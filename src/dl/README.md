@@ -25,7 +25,7 @@ of every training image:
 ```bash
 source ~/miniforge3/etc/profile.d/conda.sh
 conda activate birds
-python -m src.ml.augment --copies 3 --seed 42
+python -m src.dl.augment --copies 3 --seed 42
 ```
 
 The default output is `data/augmented_birds/`, which is ignored by Git. With the
@@ -47,11 +47,11 @@ Each added copy combines:
 | Rotation | Up to ±15 degrees | `--rotation` |
 
 Set noise/colour/rotation amounts or flip probabilities to zero to disable them;
-set both scale bounds to 1 to disable scaling. Run `python -m src.ml.augment --help`
+set both scale bounds to 1 to disable scaling. Run `python -m src.dl.augment --help`
 for all options. For example:
 
 ```bash
-python -m src.ml.augment --output data/augmented_birds_strong --copies 5 \
+python -m src.dl.augment --output data/augmented_birds_strong --copies 5 \
   --noise-std 12 --rotation 25 --scale-min 0.7 --scale-max 1.3 \
   --brightness 0.3 --saturation 0.3 --seed 42
 ```
@@ -74,9 +74,9 @@ inputs and library versions reproduces the augmented data.
 For the tracked baseline training pipeline, run from the repository root:
 
 ```bash
-python -m src.ml.train_yolo --config configs/yolo_baseline.yaml
+python -m src.dl.train_yolo --config configs/yolo_baseline.yaml
 # Another independent experiment, retaining all previous results:
-python -m src.ml.train_yolo --config configs/yolo_baseline.yaml --epochs 20 --name yolo_20ep
+python -m src.dl.train_yolo --config configs/yolo_baseline.yaml --epochs 20 --name yolo_20ep
 ```
 
 The baseline fine-tunes COCO-pretrained YOLO11n for five epochs with AdamW, image
@@ -161,7 +161,7 @@ The first pretrained run downloads the official torchvision COCO weights into
 PyTorch's cache.
 
 ```powershell
-python -m src.ml.train_faster_rcnn --device 0 --name faster_rcnn_baseline_50
+python -m src.dl.train_faster_rcnn --device 0 --name faster_rcnn_baseline_50
 ```
 
 Defaults: 50 epochs, SGD, learning rate 0.005, momentum 0.9, weight decay 0.0005,
@@ -198,7 +198,7 @@ value stops after that many evaluated epochs without a new best shared mAP50.
 Resume a failed/interrupted run to its **original** epoch budget:
 
 ```powershell
-python -m src.ml.train_faster_rcnn --resume results/faster_rcnn_baseline_50 --device 0
+python -m src.dl.train_faster_rcnn --resume results/faster_rcnn_baseline_50 --device 0
 ```
 
 Resume also recovers an epoch whose checkpoint was saved but evaluation did not
@@ -209,7 +209,7 @@ use a new run name and config rather than resuming.
 ### Hyperparameter grid search
 
 ```powershell
-python -m src.ml.tune_faster_rcnn --device 0 --name faster_rcnn_tune
+python -m src.dl.tune_faster_rcnn --device 0 --name faster_rcnn_tune
 ```
 
 `configs/faster_rcnn_tune.yaml` defines an exhaustive grid of **six trials, ten
@@ -230,13 +230,13 @@ and by the final configuration message (the best config may exist earlier).
 Resume tuning using the same command/config/grid plus `--resume`:
 
 ```powershell
-python -m src.ml.tune_faster_rcnn --device 0 --name faster_rcnn_tune --resume
+python -m src.dl.tune_faster_rcnn --device 0 --name faster_rcnn_tune --resume
 ```
 
 Then train a fresh model with the selected settings:
 
 ```powershell
-python -m src.ml.train_faster_rcnn --config results/faster_rcnn_tune/best_training_config.yaml --epochs 50 --device 0 --name faster_rcnn_tuned_50
+python -m src.dl.train_faster_rcnn --config results/faster_rcnn_tune/best_training_config.yaml --epochs 50 --device 0 --name faster_rcnn_tuned_50
 ```
 
 Compare best validation checkpoints against YOLO and classical methods using the

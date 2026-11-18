@@ -7,7 +7,7 @@ import torch
 import yaml
 
 from scripts import run_ml, organize_results
-from src.ml import inference
+from src.dl import inference
 
 
 @pytest.mark.parametrize("args", [

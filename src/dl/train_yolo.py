@@ -1,6 +1,6 @@
 """Train YOLO and retain comparable, shared-evaluator results at every epoch.
 
-python -m src.ml.train_yolo --config configs/yolo_baseline.yaml
+python -m src.dl.train_yolo --config configs/yolo_baseline.yaml
 """
 import argparse
 import csv
@@ -32,7 +32,7 @@ from data.dataset import DEFAULT_ROOT
 from data.split import load_split_manifest, load_split_from_manifest
 from evaluation import IOU_THR, SCORE_THR, evaluate, print_results, run_and_time
 from predictions import MAX_PER_IMAGE, save_predictions
-from src.ml.augment import export_dataset
+from src.dl.augment import export_dataset
 
 TUNABLE_KEYS = {"lr0", "lrf", "momentum", "weight_decay", "warmup_epochs",
                 "warmup_momentum", "box", "cls", "dfl"}
@@ -347,7 +347,7 @@ def train(config_path, run_name=None, epochs=None, device=None, output_root=None
                 "cuda_version": torch.version.cuda,
                 "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
                 "source_sha256": {str(path.relative_to(REPO)): sha256(path) for path in
-                    (Path(__file__).resolve(), REPO / "src/evaluation.py", REPO / "src/ml/augment.py")},
+                    (Path(__file__).resolve(), REPO / "src/evaluation.py", REPO / "src/dl/augment.py")},
                 "evaluation": {"split": "val", "iou_threshold": IOU_THR, "score_threshold": SCORE_THR,
                     "prediction_confidence": 0.001, "nms_iou": 0.7, "max_detections": MAX_PER_IMAGE,
                     "selection_metric": "mAP50", "timing": "batch=1, 3 warmups, excludes image loading"}}

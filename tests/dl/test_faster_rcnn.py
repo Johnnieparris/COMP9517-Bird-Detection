@@ -7,8 +7,8 @@ import pytest
 import torch
 import yaml
 
-from src.ml import train_faster_rcnn as training
-from src.ml import tune_faster_rcnn as tuning
+from src.dl import train_faster_rcnn as training
+from src.dl import tune_faster_rcnn as tuning
 
 
 class TinyDetector(torch.nn.Module):

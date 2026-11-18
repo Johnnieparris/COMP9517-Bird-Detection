@@ -46,7 +46,7 @@ if only the exported dataset is available. Official split IDs still apply.
 API usage for robustness experiments:
 
 ```python
-from src.ml.inference import load_detector
+from src.dl.inference import load_detector
 
 predict, metadata = load_detector("configs/yolo_best.yaml", device="cpu")
 boxes = predict(image_rgb)  # uint8 RGB in; N x 5 pixel XYXY + score out
