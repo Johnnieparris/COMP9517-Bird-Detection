@@ -18,6 +18,9 @@ results/*
 *.pt
 *.pth
 *.pkl
+!/models/**/*.pt
+!/models/**/*.pth
+!/models/**/*.pkl
 
 .DS_Store
 /colab/
