@@ -1,0 +1,3 @@
+method: yolo
+checkpoint: models/yolo/best.pt
+imgsz: 640

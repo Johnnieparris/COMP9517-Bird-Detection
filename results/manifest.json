@@ -1,0 +1,29 @@
+{
+  "archive": "archive/training",
+  "raw_runs": [
+    "faster_rcnn_baseline_20",
+    "faster_rcnn_tuned",
+    "yolo11n_tuned_50",
+    "yolo_tune_v1"
+  ],
+  "selected": {
+    "faster_rcnn": {
+      "run": "faster_rcnn_baseline_20",
+      "epoch": 8,
+      "mAP50": 0.8396546209990334,
+      "checkpoint": "models/faster_rcnn/best.pt"
+    },
+    "yolo": {
+      "run": "yolo11n_tuned_50",
+      "epoch": 38,
+      "mAP50": 0.8607491598298295,
+      "checkpoint": "models/yolo/best.pt"
+    }
+  },
+  "notes": [
+    "No raw artifacts were deleted; training runs moved into archive/training.",
+    "YOLO tuning checkpoints were not transferred; trial scores are retained but cannot be deployed.",
+    "Windows run manifests list 1369 training images; augmentation metadata lists 2738.",
+    "Timing hardware differs between imported ML runs and local M1 evaluation."
+  ]
+}

@@ -9,8 +9,16 @@ overlays/
 analysis/
 results/*
 !results/*.csv
+!results/README.md
+!results/manifest.json
+!results/runs/
+!results/timelines/
+!results/tuning/
+/archive/
 *.pt
 *.pth
 *.pkl
 
 .DS_Store
+/colab/
+.vscode/settings.json

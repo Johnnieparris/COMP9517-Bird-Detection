@@ -1,0 +1,5 @@
+# Exhaustive grid: 3 learning rates x 2 weight decays = 6 independent trials.
+trial_epochs: 10
+space:
+  lr0: [0.001, 0.003, 0.005]
+  weight_decay: [0.0001, 0.0005]

@@ -1,0 +1,13 @@
+# Native Ultralytics evolutionary search, followed by shared-metric reranking.
+# 10 trials x 10 epochs, then a separate 100-epoch run: 200 total training epochs.
+iterations: 10
+trial_epochs: 10
+space:
+  lr0: [0.00003, 0.003]
+  lrf: [0.01, 0.3]
+  momentum: [0.8, 0.98]
+  weight_decay: [0.00001, 0.001]
+  warmup_epochs: [0.0, 3.0]
+  box: [3.0, 10.0]
+  cls: [0.2, 1.0]
+  dfl: [0.5, 2.0]
