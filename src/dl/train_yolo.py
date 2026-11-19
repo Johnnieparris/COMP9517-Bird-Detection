@@ -100,6 +100,9 @@ def prepare_data(root, run_dir, copies, seed, validation_root=None):
         export_dataset(root, copies=copies, seed=seed)
     manifest_path = root / "splits.json" if root != DEFAULT_ROOT else official_path
     manifest = load_split_manifest(manifest_path)
+    # Member E data-efficiency roots may train on a strict subset of the official training
+    # images, but only when their manifest says so explicitly; every other check still applies.
+    is_subset = bool(json.loads(Path(manifest_path).read_text()).get("subset_of_official", False))
     augmentation_path = root / "augmentation.json"
     augmentation = json.loads(augmentation_path.read_text()) if augmentation_path.exists() else None
     if augmentation and (augmentation["copies"] != copies or augmentation["seed"] != seed):
@@ -108,7 +111,7 @@ def prepare_data(root, run_dir, copies, seed, validation_root=None):
     allowed_train = set(official["train"])
     if len(manifest["train"]) != len(set(manifest["train"])):
         raise ValueError("Duplicate training IDs in manifest")
-    if not allowed_train.issubset(manifest["train"]):
+    if not is_subset and not allowed_train.issubset(manifest["train"]):
         raise ValueError("Training dataset must include all official training images")
     for image_id in manifest["train"]:
         if image_id in set(official["val"]) | set(official["test"]):
