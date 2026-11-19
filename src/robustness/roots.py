@@ -39,7 +39,7 @@ def _write_image(path, image_rgb):
         raise IOError(f"could not write {path}")
 
 
-def build_root(src_root, dst_root, transforms, label_fn=None, info=None):
+def build_root(src_root, dst_root, transforms, label_fn=None, info=None, split_sources=None):
     """Write a derived dataset root and return its path.
 
     transforms: {split: None | fn(image_rgb, boxes_xyxy, image_id) -> image_rgb}.
@@ -47,6 +47,7 @@ def build_root(src_root, dst_root, transforms, label_fn=None, info=None):
     label_fn:   optional fn(boxes_xyxy, image_id, split) -> boxes_xyxy; rewrites labels.
                 Without it label files are copied byte-for-byte.
     info:       extra metadata saved in root_info.json.
+    split_sources: optional {split: root} to read that split from another root instead of src_root.
     Refuses to touch an existing dst_root, so old and new images are never mixed.
     """
     src_root, dst_root = Path(src_root), Path(dst_root)
@@ -58,13 +59,14 @@ def build_root(src_root, dst_root, transforms, label_fn=None, info=None):
         img_out.mkdir(parents=True)
         lbl_out.mkdir(parents=True)
         transform = transforms.get(split)
-        for record in load_split(src_root, split):
+        source = Path((split_sources or {}).get(split, src_root))
+        for record in load_split(source, split):
             dst_img = img_out / record.image_path.name
             if transform is None:
                 link_or_copy(record.image_path, dst_img)
             else:
                 _write_image(dst_img, transform(get_image(record), record.boxes, record.image_id))
-            src_lbl = src_root / "labels" / split / f"{record.image_id}.txt"
+            src_lbl = source / "labels" / split / f"{record.image_id}.txt"
             dst_lbl = lbl_out / f"{record.image_id}.txt"
             if label_fn is not None:
                 boxes = label_fn(record.boxes, record.image_id, split)
@@ -73,7 +75,8 @@ def build_root(src_root, dst_root, transforms, label_fn=None, info=None):
                 shutil.copy2(src_lbl, dst_lbl)
     if (src_root / "dataset.yaml").exists():
         shutil.copy2(src_root / "dataset.yaml", dst_root / "dataset.yaml")
-    meta = {"source_root": str(src_root), "created_utc": datetime.now(timezone.utc).isoformat(),
+    meta = {"source_root": str(src_root),
+            "split_sources": {k: str(v) for k, v in (split_sources or {}).items()}, "created_utc": datetime.now(timezone.utc).isoformat(),
             "transformed_splits": sorted(s for s in SPLITS if transforms.get(s) is not None),
             "labels_rewritten": label_fn is not None, **(info or {})}
     (dst_root / "root_info.json").write_text(json.dumps(meta, indent=2))

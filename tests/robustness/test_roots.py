@@ -65,3 +65,11 @@ def test_loader_reads_built_root(fake_root, tmp_path):
     a = {r.image_id: r.boxes for r in load_split(fake_root, "val")}
     b = {r.image_id: r.boxes for r in load_split(dst, "val")}
     assert a.keys() == b.keys() and all(np.allclose(a[k], b[k]) for k in a)
+
+
+def test_split_sources_override_src_root(fake_root, tmp_path):
+    other = build_root(fake_root, tmp_path / "other", {"train": _invert, "val": None, "test": None})
+    dst = build_root(fake_root, tmp_path / "out", {"train": None, "val": None, "test": None},
+                     split_sources={"train": other})
+    assert os.stat(dst / "images/train/train_0.jpg").st_ino == os.stat(other / "images/train/train_0.jpg").st_ino
+    assert os.stat(dst / "images/val/val_0.jpg").st_ino == os.stat(fake_root / "images/val/val_0.jpg").st_ino
