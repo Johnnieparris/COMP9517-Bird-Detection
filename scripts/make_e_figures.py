@@ -123,17 +123,21 @@ def data_efficiency():
         xs = [int(r["train_images"]) for r in curve]
         ys = [float(r["mAP50"]) for r in curve]
         ax.plot(xs, ys, color="#e87ba4", marker="v", label="clean labels")
-        for x, y in zip(xs, ys):
-            ax.annotate(f"{y:.3f}", (x, y), textcoords="offset points", xytext=(0, -10), ha="center",
-                        fontsize=6, color=MUTED)
+        for i, (x, y) in enumerate(zip(xs, ys)):
+            last = i == len(xs) - 1  # the full-data label goes below, clear of the label-noise markers
+            ax.annotate(f"{y:.3f}", (x, y), textcoords="offset points", xytext=(-4, -11) if last else (-5, 4),
+                        ha="right", fontsize=6, color=MUTED)
     extras = {"ln_jitter20": ("#2a78d6", "o", "boxes jittered ±20%"),
               "ln_drop20": ("#eb6834", "s", "20% of boxes dropped"),
               "de_10_strong": ("#008300", "P", "10% + strong aug.")}
     for run, (color, marker, label) in extras.items():
         if run in done:
+            # Hollow markers so a point at the same x as the clean-label curve stays visible.
             ax.plot([int(done[run]["train_images"])], [float(done[run]["mAP50"])], linestyle="none",
-                    color=color, marker=marker, markersize=6, label=label, markeredgecolor="white")
+                    color=color, marker=marker, markersize=7, label=label, mfc="white", mew=1.5)
     ax.set_xscale("log")
+    ax.set_xlim(110, 1700)
+    ax.set_ylim(0.74, 0.895)
     ax.set_xticks([137, 342, 684, 1369])
     ax.set_xticklabels(["137\n(10%)", "342\n(25%)", "684\n(50%)", "1369\n(100%)"])
     ax.minorticks_off()
