@@ -105,7 +105,21 @@ against 0.0777 with no preprocessing. On test it helps where compression artefac
 quality~5: Method~1 0.026$\rightarrow$0.036, Method~2 0.072$\rightarrow$0.088) and raises the
 clean scores slightly, but the average over all distorted sets is unchanged (0.040$\rightarrow$0.041
 and 0.082$\rightarrow$0.083). Preprocessing cannot restore birds that the corruption has removed.
-% ROBUST-AUG: fill from results/robustness_test.csv rows e_de_100 / e_robust_aug.
+% e_de_100 / e_robust_aug rows: results/robustness_test.csv; shortcut: results/occluder_shortcut_val.csv.
+
+For YOLO, distortion augmentation is far more effective (Fig.~\ref{fig:robust}, bottom). Against
+a model trained identically on clean images, it leaves the clean score unchanged (0.875 vs
+0.876) and raises the mean over the distorted sets from 0.562 to 0.771. The gains are largest
+where the baseline collapses: noise $\sigma=50$ 0.173$\rightarrow$0.458, blur $\sigma=4$
+0.463$\rightarrow$0.618 and JPEG quality~5 0.114$\rightarrow$0.435. Under occlusion, however,
+the augmented model scores 0.899 with half of every bird covered, \emph{higher} than on clean
+images, which no genuine robustness can explain. Because the training occluder was only ever
+placed on birds, the model may have learned that a uniform grey patch marks a bird. We tested
+this on val by pasting five bird-sized grey squares on the background of every image, away from
+all birds. The augmented model detected 96\% of them (1383 of 1442); both clean-trained models
+detected none. Its occlusion scores therefore measure this shortcut, not robustness, and we
+exclude them from its gains. Over the other twelve distorted sets, its mean mAP@0.5 is 0.750
+against 0.659 for the clean-trained model.
 
 \subsection{Data and Label Efficiency}
 \label{sec:res-data}

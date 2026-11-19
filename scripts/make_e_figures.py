@@ -95,6 +95,11 @@ def robustness():
             if xs:
                 line(ax2, xs, [by[m][(d, s) if s else ("clean", 0)] for s in xs], m)
         ax2.set_ylim(0, 1.0)
+        if d == "occlusion" and "e_robust_aug" in bottom:
+            # results/occluder_shortcut_val.csv: this model fires on grey patches pasted on background.
+            ax2.annotate("shortcut:\ngrey patch\n= bird", xy=(2, by["e_robust_aug"][("occlusion", 2)]),
+                         xytext=(1.55, 0.38), fontsize=6, color=INK,
+                         arrowprops=dict(arrowstyle="->", color=MUTED, lw=0.7))
         ax2.set_xticks([0, 1, 2, 3])
         ax2.set_xlabel("severity")
     axes[0, 0].set_ylabel("mAP@0.5 / clean mAP@0.5")
