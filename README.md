@@ -149,8 +149,8 @@ with the scores in your report. Use for report figures and the video demo.
 Step 12:
 Advanced studies (Member E): robustness, data/label efficiency, failure analysis.
 Run from the repository root, after Step 10 has published val and test predictions for
-m1, m2, yolo and faster_rcnn (the YOLO / Faster R-CNN weights in models/ come from Git LFS:
-"git lfs pull"). Generated data goes under data/ (ignored); results CSVs under results/.
+m1, m2, yolo and faster_rcnn (the YOLO / Faster R-CNN weights are not in Git: copy them into
+models/yolo/ and models/faster_rcnn/ first, see models/README.md). Generated data goes under data/ (ignored); results CSVs under results/.
 
   Study A, robustness to distortions (5 types x 3 severities, fixed seed):
     python scripts/make_distorted_roots.py           # data/distorted/<type>_s<1-3>/ (val + test distorted)

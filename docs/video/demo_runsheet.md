@@ -20,7 +20,7 @@ running, so they are upper bounds.
 Prerequisites (one-off, already done on the recording machine):
 
 ```bash
-git lfs pull                                   # model weights
+# copy models/yolo/best.pt and models/faster_rcnn/best.pt into place (not in Git; see models/README.md)
 python scripts/make_distorted_roots.py         # step 5's distorted images
 ```
 
