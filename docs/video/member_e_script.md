@@ -1,6 +1,6 @@
 # Video script: advanced studies, discussion and future work (Member E's share, presented by Johnnie)
 
-Target: about 1:45 spoken (~265 words at a steady pace). Slide cues in brackets; slides are
+Target: about 1:45 spoken (~240 words at a steady pace). Slide cues in brackets; slides are
 outlined in `member_e_slides.md`. Every number is on the **test** split and comes from a
 committed CSV: `results/robustness_test.csv`, `results/occluder_shortcut_val.csv`,
 `results/data_efficiency_test.csv`, `results/failure_categories_test.csv`, `analysis/size_bins.csv`.
