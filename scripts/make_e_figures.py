@@ -57,10 +57,10 @@ def read_csv(path):
         return list(csv.DictReader(f))
 
 
-def save(fig, name):
+def save(fig, name, dpi=300):
     FIG.mkdir(parents=True, exist_ok=True)
     fig.savefig(FIG / f"{name}.pdf", bbox_inches="tight")
-    fig.savefig(FIG / f"{name}.png", dpi=300, bbox_inches="tight")
+    fig.savefig(FIG / f"{name}.png", dpi=dpi, bbox_inches="tight")
     plt.close(fig)
     print(f"wrote docs/report/figures/{name}.pdf/.png")
 
@@ -225,7 +225,7 @@ def gallery():
     fig.text(0.5, 0.0, "green = correct detection, red = false alarm, blue = missed bird",
              ha="center", fontsize=6.5, color=MUTED)
     fig.tight_layout()
-    save(fig, "e_gallery")
+    save(fig, "e_gallery", dpi=150)  # photo grid: keep the PNG small
 
 
 if __name__ == "__main__":

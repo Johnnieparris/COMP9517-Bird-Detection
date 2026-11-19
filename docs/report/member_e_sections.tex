@@ -18,10 +18,11 @@
 \textbf{Robustness.} Following Hendrycks and Dietterich~\cite{hendrycks2019benchmarking} and its
 detection counterpart~\cite{michaelis2019benchmarking}, we built distorted copies of the val and
 test splits with five corruptions at three severities: Gaussian noise ($\sigma=10,25,50$ on
-0--255), Gaussian blur ($\sigma=1,2,4$\,px), low light ($I'=a(I-\mu)+a\mu$ with $a=0.6,0.4,0.2$,
+0--255), Gaussian blur ($\sigma=1,2,4$\,px), low light ($I'=aI$ with $a=0.6,0.4,0.2$,
 which lowers contrast and brightness together), JPEG compression (quality 30, 15, 5) and
 occlusion (a grey rectangle covering 25, 50 or 75\% of every bird box). Each random draw is
-seeded from the image name, so the 15 variants are reproducible. Labels are unchanged. Every
+seeded from the image name, so the 15 variants are reproducible. Labels are unchanged, and
+distorted images are re-saved as JPEG at quality 95. Every
 method was run once per variant on test; val variants were used only to tune mitigations.
 For Methods~1 and~2 the mitigation is one global preprocessing step, chosen from nine
 combinations of median, bilateral~\cite{tomasi1998bilateral} or non-local-means~\cite{buades2005nonlocal}
@@ -33,11 +34,13 @@ by a randomly chosen corruption and severity.
 
 \textbf{Data and label efficiency.} YOLO11n~\cite{ultralytics2024yolo11} was retrained from COCO
 weights on nested random subsets of 10, 25 and 50\% of the training images, on all images with
-every box edge jittered by up to $\pm$20\% of the box size, and on all images with 20\% of boxes
-deleted. All runs share the tuned optimiser and loss settings and Ultralytics' default online
+every box edge jittered by up to $\pm$20\% of the box size, and on all images with 20\% of each image's boxes
+deleted at random (rounded per image, so images with one or two birds keep their boxes;
+19.8\% of all boxes overall). All runs share the tuned optimiser and loss settings and Ultralytics' default online
 augmentation (mosaic~\cite{bochkovskiy2020yolov4}, flips, HSV, scale). Full-data runs train for 30 epochs; a subset of
-fraction $f$ trains for $\min(30/f, 100)$ epochs so that the smaller sets are not also
-under-trained. As an improvement for the low-data regime we add stronger augmentation to the
+fraction $f$ trains for $\min(30/f, 100)$ epochs, which matches the full run's number of
+optimiser updates up to a 100-epoch cap: the 50\% run gets all of them, the 25\% run 83\% and
+the 10\% run a third. As an improvement for the low-data regime we add stronger augmentation to the
 10\% run (heavier mosaic, scale and colour jitter, mixup and copy-paste~\cite{ghiasi2021copypaste}).
 Each run's checkpoint is the epoch with the best clean val mAP@0.5, and is evaluated once on test.
 
@@ -133,9 +136,10 @@ curve flattens quickly: half of the training set gives 0.874, almost the same as
 (0.876), and a quarter still gives 0.854. Only at 10\% (137 images) does accuracy drop clearly,
 to 0.757, with counting error rising from 1.06 to 1.80 birds per image. Even this budget is
 far beyond the classical methods. The 10\% run's best val epoch was its 96th of 100, so the
-100-epoch cap probably understates it slightly. Note that our 30-epoch full-data run, trained
-with Ultralytics' online augmentation, already beats the team's selected YOLO model
-(0.876 vs 0.832), which used offline augmented copies and no online augmentation.
+100-epoch cap probably understates it slightly. Our 30-epoch full-data run scores 0.876 where the team's
+selected YOLO scores 0.832, but it uses a different augmentation scheme (online rather than
+offline copies), so we treat it only as the reference for the other Study~B runs, not as a
+replacement headline model.
 
 Label noise matters less than expected, and its kind matters more than its amount. Deleting
 20\% of the boxes, so that one bird in five is taught as background, left test mAP@0.5
@@ -179,7 +183,8 @@ different kinds. Faster R-CNN misses fewer isolated birds (101 vs 128) but produ
 duplicate boxes in flocks (70 vs 47) and misses more birds in the two densest test images
 (recall 0.46 vs 0.59).
 
-\textbf{Density and size.} Every method degrades with crowding (Fig.~\ref{fig:density}). YOLO's
+\textbf{Density and size.} The learned detectors degrade with crowding (Fig.~\ref{fig:density});
+the classical methods are poor at every density. YOLO's
 mAP falls from 0.886 on images with 1--10 birds to 0.814 at 11--50 and 0.680 at 51--100, and
 its counting error grows from 0.5 to 14.5 birds per image. Small birds are the main reason:
 YOLO finds 61\% of the smallest third of birds (narrower than 6.3\% of the image) but 89\%
@@ -202,7 +207,8 @@ larger ResNet-50 backbone averages out pixel noise better than YOLO11n's small b
 same 640-pixel input. Occlusion is the hardest case for all: detectors that recognise birds by
 their whole silhouette fail when half of it is hidden, which is also what happens inside dense
 flocks. Preprocessing cannot put back information the corruption removed; showing the
-corruption during training can, at no cost on clean images. The occlusion result is the
+corruption during training can, at no cost on clean images, although we trained with the same
+corruption generator and severities that we test on, so this is a best case. The occlusion result is the
 cautionary part. An augmentation that is correlated with the labels, here an occluder that only
 ever appears on birds, teaches a shortcut that inflates the benchmark and would cause false
 alarms on any grey object in the field. Occluders should be drawn with random texture and
@@ -220,7 +226,10 @@ of more data seen at larger scale~\cite{sun2017revisiting}.
 \textbf{Limitations.} Each training configuration was run once (seed~0), so differences under
 about 0.02 mAP are within run-to-run noise. The test split has no image with more than 66
 birds. Our Study~B runs use 30 epochs and a different augmentation scheme from the team's
-selected models, so they are compared only with each other. CPU timings were measured on one
+selected models; we plot the team's YOLO beside them for reference only. The 100-epoch cap
+gives the 10\% run a third of the full run's updates, so part of its drop may be under-training.
+The robust-trained YOLO saw the test corruption types during training, so its gain on unseen
+corruptions was not measured. CPU timings were measured on one
 laptop, and our training times overlap with other jobs, so they are indicative only.
 
 \begin{figure}[t]

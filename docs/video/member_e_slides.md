@@ -21,9 +21,9 @@ Every number comes from a committed CSV (named under each slide).
 
 **Figure:** `docs/report/figures/e_robustness.png` (bottom row)
 
-- Denoising + CLAHE for M1/M2, chosen on val: no real gain (CLAHE hurts M1)
-- YOLO trained with the corruptions: clean score unchanged (0.875), distorted mean 0.56 → 0.77
-- Caution: it learned "grey patch = bird", firing on 96% of grey squares pasted on empty sand
+- Denoising for M1/M2, chosen on val (CLAHE was rejected, it hurts M1): no real gain
+- YOLO trained with the same corruptions: clean score unchanged (0.875), distorted mean 0.56 → 0.77 (best case)
+- Caution: it learned "grey patch = bird", firing on 96% of grey squares pasted away from birds (val)
 
 *Source: results/robustness_test.csv, results/occluder_shortcut_val.csv*
 

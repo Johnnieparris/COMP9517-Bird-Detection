@@ -160,6 +160,7 @@ m1, m2, yolo and faster_rcnn (the YOLO / Faster R-CNN weights in models/ come fr
     python scripts/make_preprocessed_roots.py        # data/preprocessed/...
     python scripts/run_robustness.py --methods m1pre m2pre
     -> results/robustness_test.csv, results/robustness_preprocess_tuning_val.csv
+    python scripts/occluder_shortcut_check.py        # val: do models fire on grey patches? (needs Study B)
 
   Study B, data and label efficiency (YOLO11n, Apple MPS; ~3 h for all 8 runs):
     python scripts/make_e_training_roots.py          # data/e_training/... + configs/e/*.yaml
