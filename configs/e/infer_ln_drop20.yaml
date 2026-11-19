@@ -1,0 +1,4 @@
+# Inference config for Study B run ln_drop20; written by scripts/eval_e_runs.py
+checkpoint: results/e_runs/e_ln_drop20/checkpoints/best_shared.pt
+imgsz: 640
+method: yolo
