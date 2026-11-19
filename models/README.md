@@ -17,16 +17,8 @@ Each `metadata.json` records the original checkpoint hash, exported hash,
 validation scores, epoch, settings and provenance. Original checkpoints remain
 under `archive/training/`.
 
-Weights in `models/` are tracked with Git LFS. Install Git LFS before cloning,
-or run the following in an existing checkout to download the checkpoints:
-
-```bash
-git lfs install
-git lfs pull
-```
-
-Download through Git with LFS enabled to obtain the actual model files.
-Training checkpoints in `archive/` remain local and are not included.
+Weights are ignored by Git. Transfer this entire `models/` directory separately
+when sharing the project; metadata and inference configs can be committed.
 
 From the project root, use the same style of command as `scripts/run_m1.py`:
 
