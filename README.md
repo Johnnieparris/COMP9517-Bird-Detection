@@ -146,6 +146,42 @@ with the scores in your report. Use for report figures and the video demo.
  
 
 
+Step 12:
+Advanced studies (Member E): robustness, data/label efficiency, failure analysis.
+Run from the repository root, after Step 10 has published val and test predictions for
+m1, m2, yolo and faster_rcnn (the YOLO / Faster R-CNN weights are not in Git: copy them into
+models/yolo/ and models/faster_rcnn/ first, see models/README.md). Generated data goes under data/ (ignored); results CSVs under results/.
+
+  Study A, robustness to distortions (5 types x 3 severities, fixed seed):
+    python scripts/make_distorted_roots.py           # data/distorted/<type>_s<1-3>/ (val + test distorted)
+    python scripts/robustness_contact_sheets.py      # results/robustness/contact_<type>.jpg
+    python scripts/run_robustness.py --methods m1 m2 yolo faster_rcnn   # test runs use --final
+    python scripts/tune_preprocess.py                # choose ONE denoise/CLAHE setting on VAL only
+    python scripts/make_preprocessed_roots.py        # data/preprocessed/...
+    python scripts/run_robustness.py --methods m1pre m2pre
+    -> results/robustness_test.csv, results/robustness_preprocess_tuning_val.csv
+    python scripts/occluder_shortcut_check.py        # val: do models fire on grey patches? (needs Study B)
+
+  Study B, data and label efficiency (YOLO11n, Apple MPS; ~3 h for all 8 runs):
+    python scripts/make_e_training_roots.py          # data/e_training/... + configs/e/*.yaml
+    bash scripts/train_e_runs.sh                     # results/e_runs/e_<run>/ (resumable)
+    python scripts/eval_e_runs.py --robustness       # one test run per model
+    -> results/data_efficiency_test.csv (+ robust-training rows in results/robustness_test.csv)
+
+  Study C, density, size and failure analysis:
+    python src/analysis.py                           # analysis/density_bins.csv, size_bins.csv
+    python scripts/failure_analysis.py               # results/failure_categories_test.csv + gallery
+
+  Report figures:
+    python scripts/make_e_figures.py                 # docs/report/figures/e_*.pdf / .png
+
+  Tests: python -m pytest tests/robustness tests/data_efficiency
+
+  Third-party code and methods used by these studies: Ultralytics YOLO11 (training/inference),
+  OpenCV (Gaussian blur, JPEG codec, CLAHE, bilateral filter, non-local means denoising),
+  NumPy, matplotlib. The distortion set follows Hendrycks & Dietterich (ICLR 2019).
+  All study code in src/robustness/, src/data_efficiency/ and the scripts above is our own.
+
 Additional Information:
 
 If you want to test an image not in the dataset, here is the process of importing it:

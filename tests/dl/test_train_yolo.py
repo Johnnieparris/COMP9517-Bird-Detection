@@ -88,3 +88,38 @@ def test_timeline_atomic_json_does_not_replace_good_history_with_nan(tmp_path):
     with pytest.raises(ValueError):
         training.write_json(path, {"mAP50": float("nan")})
     assert json.loads(path.read_text()) == {"mAP50": .5}
+
+
+def _subset_fixture(tmp_path, monkeypatch, flagged):
+    """Official split train=[a, b]; a data root whose splits.json lists only [a] as train."""
+    import cv2
+    monkeypatch.setattr(training, "REPO", tmp_path)
+    (tmp_path / "splits").mkdir()
+    official = {"train": ["a", "b"], "val": ["v"], "test": ["t"]}
+    (tmp_path / "splits/official.json").write_text(json.dumps({"splits": official}))
+    root = tmp_path / "data"
+    for split, ids in official.items():
+        (root / "images" / split).mkdir(parents=True)
+        (root / "labels" / split).mkdir(parents=True)
+        for i in ids:
+            cv2.imwrite(str(root / "images" / split / f"{i}.jpg"), np.zeros((8, 8, 3), np.uint8))
+            (root / "labels" / split / f"{i}.txt").write_text("")
+    manifest = {"splits": {"train": ["a"], "val": ["v"], "test": ["t"]}}
+    if flagged:
+        manifest["subset_of_official"] = True
+    (root / "splits.json").write_text(json.dumps(manifest))
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    return root, run_dir
+
+
+def test_prepare_data_accepts_flagged_subset(tmp_path, monkeypatch):
+    root, run_dir = _subset_fixture(tmp_path, monkeypatch, flagged=True)
+    _, _, info = training.prepare_data(root, run_dir, 0, 42, validation_root=root)
+    assert info["train_images"] == 1
+
+
+def test_prepare_data_rejects_unflagged_subset(tmp_path, monkeypatch):
+    root, run_dir = _subset_fixture(tmp_path, monkeypatch, flagged=False)
+    with pytest.raises(ValueError, match="all official training images"):
+        training.prepare_data(root, run_dir, 0, 42, validation_root=root)

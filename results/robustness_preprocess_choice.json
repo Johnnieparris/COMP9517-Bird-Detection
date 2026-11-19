@@ -1,0 +1,29 @@
+{
+  "chosen": "nlm_light",
+  "setting": {
+    "nlm_h": 5
+  },
+  "selection": "max mean val mAP50 over clean + 15 distorted variants, Method 1",
+  "mean_val_mAP50": {
+    "none": 0.07771339190525804,
+    "clahe": 0.0432273428184459,
+    "bilateral_clahe": 0.05108202645983403,
+    "nlm_clahe": 0.05744141020095088,
+    "nlm_strong_clahe": 0.04428717748357319,
+    "bilateral": 0.07546711809499936,
+    "nlm_light": 0.07859764597566922,
+    "nlm": 0.07274324452872086,
+    "median3": 0.0722763063748523
+  },
+  "clean_val_mAP50": {
+    "none": 0.10244975437015633,
+    "clahe": 0.05463277274691774,
+    "bilateral_clahe": 0.07359586274674029,
+    "nlm_clahe": 0.07703255235584443,
+    "nlm_strong_clahe": 0.048873448124839715,
+    "bilateral": 0.10017899841422867,
+    "nlm_light": 0.10253043959634242,
+    "nlm": 0.0995337524213124,
+    "median3": 0.09116669473264882
+  }
+}

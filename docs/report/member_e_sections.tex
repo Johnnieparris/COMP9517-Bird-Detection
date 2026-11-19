@@ -1,0 +1,281 @@
+% Member E's report sections (advanced studies, Discussion, Conclusion), for pasting into the
+% team's Overleaf project. Written by Johnnie Parris, who took over Member E's share.
+% References: docs/refs/member_e.bib (plus zuiderveld1994clahe from method1.bib).
+% Figures: docs/report/figures/e_*.pdf, made by scripts/make_e_figures.py.
+% Every number is on the TEST split unless stated, from a committed CSV named in a comment
+% beside it. Thresholds for P/R/count are each method's best-F1 threshold on clean val.
+% Budget (PROJECT_PLAN.md section 7): ~0.4 p Methods, ~1 p Results, ~1.5 p Discussion, 0.5 p Conclusion.
+% Text is ~2,400 words; with all figures this is over budget. Cut in this order if the report
+% exceeds 10 pages: (1) the gallery figure (fig:gallery) -> keep one row or move to the video;
+% (2) the density figure -> keep its numbers in the text; (3) shorten Limitations.
+
+% ---------------------------------------------------------------------------------------------
+% In Section 3, Methods
+% ---------------------------------------------------------------------------------------------
+\subsection{Advanced Studies}
+\label{sec:advanced}
+
+\textbf{Robustness.} Following Hendrycks and Dietterich~\cite{hendrycks2019benchmarking} and its
+detection counterpart~\cite{michaelis2019benchmarking}, we built distorted copies of the val and
+test splits with five corruptions at three severities: Gaussian noise ($\sigma=10,25,50$ on
+0--255), Gaussian blur ($\sigma=1,2,4$\,px), low light ($I'=aI$ with $a=0.6,0.4,0.2$,
+which lowers contrast and brightness together), JPEG compression (quality 30, 15, 5) and
+occlusion (a grey rectangle covering 25, 50 or 75\% of every bird box). Each random draw is
+seeded from the image name, so the 15 variants are reproducible. Labels are unchanged, and
+distorted images are re-saved as JPEG at quality 95. Every
+method was run once per variant on test; val variants were used only to tune mitigations.
+For Methods~1 and~2 the mitigation is one global preprocessing step, chosen from nine
+combinations of median, bilateral~\cite{tomasi1998bilateral} or non-local-means~\cite{buades2005nonlocal}
+denoising and CLAHE~\cite{zuiderveld1994clahe} by the mean val mAP@0.5 of Method~1 over the
+clean and 15 distorted val sets. A per-distortion choice would assume the corruption is known
+at test time. Method~2's classifier is retrained on preprocessed images. For YOLO the mitigation
+is training-time distortion augmentation: each training image is replaced, with probability 0.5,
+by a randomly chosen corruption and severity.
+
+\textbf{Data and label efficiency.} YOLO11n~\cite{ultralytics2024yolo11} was retrained from COCO
+weights on nested random subsets of 10, 25 and 50\% of the training images, on all images with
+every box edge jittered by up to $\pm$20\% of the box size, and on all images with 20\% of each image's boxes
+deleted at random (rounded per image, so images with one or two birds keep their boxes;
+19.8\% of all boxes overall). All runs share the tuned optimiser and loss settings and Ultralytics' default online
+augmentation (mosaic~\cite{bochkovskiy2020yolov4}, flips, HSV, scale). Full-data runs train for 30 epochs; a subset of
+fraction $f$ trains for $\min(30/f, 100)$ epochs, which matches the full run's number of
+optimiser updates up to a 100-epoch cap: the 50\% run gets all of them, the 25\% run 83\% and
+the 10\% run a third. As an improvement for the low-data regime we add stronger augmentation to the
+10\% run (heavier mosaic, scale and colour jitter, mixup and copy-paste~\cite{ghiasi2021copypaste}).
+Each run's checkpoint is the epoch with the best clean val mAP@0.5, and is evaluated once on test.
+
+\textbf{Density and failure analysis.} Test images are binned by bird count (0, 1--10, 11--50,
+51--100; no test image has more than 100 birds), and birds by box width into equal thirds. Each
+error is assigned automatically to one of five types: a miss inside a flock (at least three
+other birds within two box diagonals), an isolated miss, a duplicate detection, a poorly
+localised box ($0.1\le$ IoU $<0.5$) and a background false alarm (IoU $<0.1$).
+
+% ---------------------------------------------------------------------------------------------
+% In Section 4, Experimental Results
+% ---------------------------------------------------------------------------------------------
+\subsection{Robustness to Image Distortions}
+\label{sec:res-robust}
+
+% Numbers: results/robustness_test.csv (mAP50 per method x variant, test split).
+Fig.~\ref{fig:robust} and Table~\ref{tab:robust} show how test mAP@0.5 changes under the five
+corruptions. The learned detectors stay far ahead in absolute terms: averaged over all 15
+distorted sets, YOLO reaches 0.535 and Faster R-CNN 0.524, against 0.082 for Method~2 and 0.040
+for Method~1. In relative terms, however, they lose more. YOLO keeps 64\% of its clean mAP on
+average and Faster R-CNN 63\%, while Method~1 keeps 86\%, mostly because its clean score is
+already near the floor.
+
+Mild corruptions barely matter: at severity~1 every detector stays within 10\% of its clean
+score, except under occlusion. The damage comes at the top severities, and the two detectors
+fail differently. Strong noise ($\sigma=50$) cuts YOLO to 0.215 but Faster R-CNN only to 0.418,
+whereas heavy blur ($\sigma=4$\,px) hurts both about equally (0.341 and 0.300), as does JPEG
+quality~5 (0.182 and 0.183). Low light is the most benign corruption: at a fifth of the original
+contrast YOLO still scores 0.709. Occlusion is the worst. Covering a quarter of each bird drops
+YOLO to 0.506; covering three quarters leaves it at 0.014, and Method~2 at zero. Method~1 falls
+to about 0.02 at every occlusion level, since the grey patch breaks the colour contrast its
+segmentation relies on.
+
+\begin{table}[t]
+\centering
+\caption{Share of clean test mAP@0.5 kept under each corruption (mean over the three
+severities). ``+dn'' adds the denoising chosen on val.}
+\label{tab:robust}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lcccccc}
+\hline
+ & M1 & M1+dn & M2 & M2+dn & YOLO & F-RCNN \\
+\hline
+Clean mAP@0.5 & 0.047 & 0.051 & 0.116 & 0.123 & 0.832 & 0.825 \\
+Noise     & 0.98 & 0.87 & 0.83 & 0.78 & 0.65 & 0.76 \\
+Blur      & 1.07 & 0.98 & 0.90 & 0.81 & 0.75 & 0.70 \\
+Low light & 0.92 & 0.86 & 0.89 & 0.85 & 0.93 & 0.86 \\
+JPEG      & 0.89 & 0.90 & 0.84 & 0.86 & 0.64 & 0.66 \\
+Occlusion & 0.44 & 0.42 & 0.09 & 0.08 & 0.25 & 0.20 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/e_robustness.pdf}
+\caption{Robustness on the test set. Top: mAP@0.5 relative to each method's clean score;
+dashed lines add the val-selected denoising. Bottom: absolute mAP@0.5 of YOLO11n, comparing the
+team's model with our 30-epoch retraining with and without distortion augmentation.}
+\label{fig:robust}
+\end{figure*}
+
+\textbf{Mitigation.} For the classical methods, CLAHE lowered val mAP under every corruption
+(Method~1 clean val: 0.102 without, 0.055 with), because it changes the colour contrast that
+the segmentation thresholds were tuned on. The val-selected setting is therefore light
+non-local-means denoising alone ($h=5$), whose mean val mAP over the 16 val sets was 0.0786
+against 0.0777 with no preprocessing. On test it helps where compression artefacts dominate (JPEG
+quality~5: Method~1 0.026$\rightarrow$0.036, Method~2 0.072$\rightarrow$0.088) and raises the
+clean scores slightly, but the average over all distorted sets is unchanged (0.040$\rightarrow$0.041
+and 0.082$\rightarrow$0.083). Preprocessing cannot restore birds that the corruption has removed.
+% e_de_100 / e_robust_aug rows: results/robustness_test.csv; shortcut: results/occluder_shortcut_val.csv.
+
+For YOLO, distortion augmentation is far more effective (Fig.~\ref{fig:robust}, bottom). Against
+a model trained identically on clean images, it leaves the clean score unchanged (0.875 vs
+0.876) and raises the mean over the distorted sets from 0.562 to 0.771. The gains are largest
+where the baseline collapses: noise $\sigma=50$ 0.173$\rightarrow$0.458, blur $\sigma=4$
+0.463$\rightarrow$0.618 and JPEG quality~5 0.114$\rightarrow$0.435. Under occlusion, however,
+the augmented model scores 0.899 with half of every bird covered, \emph{higher} than on clean
+images, which no genuine robustness can explain. Because the training occluder was only ever
+placed on birds, the model may have learned that a uniform grey patch marks a bird. We tested
+this on val by pasting five bird-sized grey squares on the background of every image, away from
+all birds. The augmented model detected 96\% of them (1383 of 1442); both clean-trained models
+detected none. Its occlusion scores therefore measure this shortcut, not robustness, and we
+exclude them from its gains. Over the other twelve distorted sets, its mean mAP@0.5 is 0.750
+against 0.659 for the clean-trained model.
+
+\subsection{Data and Label Efficiency}
+\label{sec:res-data}
+
+% Numbers: results/data_efficiency_test.csv (test split, one run each, seed 0).
+Fig.~\ref{fig:data} shows test mAP@0.5 of YOLO11n against the number of training images. The
+curve flattens quickly: half of the training set gives 0.874, almost the same as the full set
+(0.876), and a quarter still gives 0.854. Only at 10\% (137 images) does accuracy drop clearly,
+to 0.757, with counting error rising from 1.06 to 1.80 birds per image. Even this budget is
+far beyond the classical methods. The 10\% run's best val epoch was its 96th of 100, so the
+100-epoch cap probably understates it slightly. Our 30-epoch full-data run scores 0.876 where the team's
+selected YOLO scores 0.832, but it uses a different augmentation scheme (online rather than
+offline copies), so we treat it only as the reference for the other Study~B runs, not as a
+replacement headline model.
+
+Label noise matters less than expected, and its kind matters more than its amount. Deleting
+20\% of the boxes, so that one bird in five is taught as background, left test mAP@0.5
+unchanged (0.881). Jittering every box edge by up to 20\% cost 0.031 mAP@0.5 (0.845), and more
+at stricter overlaps: mAP@0.5:0.95 fell from 0.498 to 0.453, because the model learns the
+blurred box extents. Stronger augmentation in the 10\% regime gave no clear gain: mAP@0.5 rose
+from 0.757 to 0.775 and counting error fell from 1.80 to 1.60, but mAP@0.5:0.95 fell from 0.411
+to 0.375, and both runs reached the same val mAP (0.815). With a single seed per run,
+differences below about 0.02 should not be over-read.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/e_data_efficiency.pdf}
+\caption{YOLO11n test mAP@0.5 against training-set size (nested random subsets), with the
+label-noise runs and the strong-augmentation run as separate markers.}
+\label{fig:data}
+\end{figure}
+
+% ---------------------------------------------------------------------------------------------
+% Section 5, Discussion
+% ---------------------------------------------------------------------------------------------
+\section{Discussion}
+\label{sec:discussion}
+
+% Clean test numbers: analysis/summary.csv (python src/analysis.py), thresholds from val.
+% Density/size: analysis/density_bins.csv, analysis/size_bins.csv. Errors: results/failure_categories_test.csv.
+% Timing: results/ml_test_comparison.csv (YOLO, Faster R-CNN; CPU, this Mac), results/m1_test.meta.json,
+% src/ml/README.md (M2). Training: results/timelines/*.csv (CUDA), results/e_runs (MPS).
+
+\textbf{Why the learned detectors win.} YOLO11n (0.832 mAP@0.5) and Faster R-CNN (0.825) are
+an order of magnitude ahead of Method~2 (0.116) and Method~1 (0.047). The failure breakdown in
+Fig.~\ref{fig:failures} shows why. Both classical methods miss most birds (recall 0.10 and
+0.16), and about two thirds of those misses are birds inside flocks: segmentation merges
+touching birds into one component, which the shape filter then rejects or boxes as one bird.
+Method~2 can only rescore Method~1's candidates, so it inherits those misses. The CNNs learn
+multi-scale features that separate neighbouring birds, which cuts flock misses from 921
+(Method~1) to 217 (YOLO), and they learn what is \emph{not} a bird. Background false alarms on
+the 27 empty test images fall from 2.7 per image for both classical methods to 0.19 (YOLO) and
+0.26 (Faster R-CNN). The two CNNs make similar numbers of errors (582 and 586), but of
+different kinds. Faster R-CNN misses fewer isolated birds (101 vs 128) but produces more
+duplicate boxes in flocks (70 vs 47) and misses more birds in the two densest test images
+(recall 0.46 vs 0.59).
+
+\textbf{Density and size.} The learned detectors degrade with crowding (Fig.~\ref{fig:density});
+the classical methods are poor at every density. YOLO's
+mAP falls from 0.886 on images with 1--10 birds to 0.814 at 11--50 and 0.680 at 51--100, and
+its counting error grows from 0.5 to 14.5 birds per image. Small birds are the main reason:
+YOLO finds 61\% of the smallest third of birds (narrower than 6.3\% of the image) but 89\%
+of the largest, and Faster R-CNN 57\% and 93\%. The test split contains only two images with
+more than 50 birds and none above 100 (only two training images exceed 100), so the
+high-density results rest on very few images.
+
+\textbf{Speed and accuracy.} On one Apple M5 Pro CPU, Method~1 needs 4.9\,ms per image with no
+training, Method~2 about 70\,ms after about 100\,s of training, YOLO11n 56\,ms and Faster R-CNN
+451\,ms. Training took 46\,min for YOLO and 55\,min for Faster R-CNN on a CUDA GPU. YOLO is
+therefore both the most accurate and, among the learned methods, the fastest: eight times
+faster than Faster R-CNN for equal accuracy. Method~1 remains useful only where speed or the
+absence of training data matter more than recall.
+
+\textbf{What the studies show.} Robustness and accuracy are different properties. The CNNs lose
+a larger share of their score under corruption than the classical methods, because they exploit
+fine texture that noise, blur and compression destroy~\cite{dodge2016understanding}, while the classical methods have little
+to lose. Faster R-CNN is clearly more tolerant of noise than YOLO, plausibly because its much
+larger ResNet-50 backbone averages out pixel noise better than YOLO11n's small backbone at the
+same 640-pixel input. Occlusion is the hardest case for all: detectors that recognise birds by
+their whole silhouette fail when half of it is hidden, which is also what happens inside dense
+flocks. Preprocessing cannot put back information the corruption removed; showing the
+corruption during training can, at no cost on clean images, although we trained with the same
+corruption generator and severities that we test on, so this is a best case. The occlusion result is the
+cautionary part. An augmentation that is correlated with the labels, here an occluder that only
+ever appears on birds, teaches a shortcut that inflates the benchmark and would cause false
+alarms on any grey object in the field. Occluders should be drawn with random texture and
+placed on background as well as on birds.
+
+The data study suggests where effort pays off. Beyond about 700 images, more images of the
+same kind add little, and missing labels are tolerated well, so annotating more of the
+densest scenes, or annotating them faster by accepting some missed birds, should help more than
+annotating more easy images. Box precision matters more than completeness: jittered boxes
+cost accuracy at every overlap threshold, while dropped boxes did not. This agrees with
+reports that deep networks are robust to missing or wrong labels when correct ones still
+dominate~\cite{rolnick2017deep,frenay2014classification}, and with the diminishing returns
+of more data seen at larger scale~\cite{sun2017revisiting}.
+
+\textbf{Limitations.} Each training configuration was run once (seed~0), so differences under
+about 0.02 mAP are within run-to-run noise. The test split has no image with more than 66
+birds. Our Study~B runs use 30 epochs and a different augmentation scheme from the team's
+selected models; we plot the team's YOLO beside them for reference only. The 100-epoch cap
+gives the 10\% run a third of the full run's updates, so part of its drop may be under-training.
+The robust-trained YOLO saw the test corruption types during training, so its gain on unseen
+corruptions was not measured. CPU timings were measured on one
+laptop, and our training times overlap with other jobs, so they are indicative only.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/e_failures.pdf}
+\caption{Test-set errors by type at each method's val-selected threshold.}
+\label{fig:failures}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/e_density.pdf}
+\caption{Test mAP@0.5 and counting error by number of birds per image ($n$ = images per bin).
+Count MAE uses a log scale.}
+\label{fig:density}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/e_gallery.pdf}
+\caption{Best (top) and worst (bottom) test images for each method. Green: correct detection;
+red: false alarm; blue: missed bird.}
+\label{fig:gallery}
+\end{figure*}
+
+% ---------------------------------------------------------------------------------------------
+% Section 6, Conclusion
+% ---------------------------------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+We compared a non-learning detector, a handcrafted-feature classifier and two CNN detectors on
+beach bird detection. The CNNs win by an order of magnitude (test mAP@0.5 0.832 for YOLO11n and
+0.825 for Faster R-CNN, against 0.116 and 0.047), mainly because they separate birds inside
+flocks and reject sand, foam and rock. YOLO11n is also eight times faster than Faster R-CNN on a
+CPU, which makes it the best overall choice. The advanced studies add three findings. First,
+the CNNs are accurate but fragile: heavy noise, blur, compression and occlusion remove most of
+their advantage. Training with corruptions restores much of it without hurting clean accuracy,
+but a label-correlated occluder taught YOLO a shortcut, which a simple paste test exposed.
+Second, YOLO needs surprisingly little data: half the training set matches the full set, and
+deleting a fifth of the labels does no harm, whereas imprecise boxes do. Third, the remaining
+errors are concentrated in dense flocks and on small birds.
+
+\textbf{Future work.} (i) Tiled, higher-resolution inference (e.g.\ SAHI) and a small-object
+detection head for the smallest third of birds. (ii) Density-map or point-based counting for
+flocks, where box detectors merge or miss birds. (iii) Occlusion augmentation that is not tied
+to the labels, with natural occluders (other birds, waves, vegetation). (iv) Repeating the data
+and label studies with several seeds, and evaluating on flocks of more than 100 birds, which the
+current test split does not contain.

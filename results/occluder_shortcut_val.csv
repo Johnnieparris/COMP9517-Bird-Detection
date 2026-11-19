@@ -1,0 +1,4 @@
+model,thr,patch_side_px,patches,patches_detected,rate
+yolo,0.38581,40,1442,0,0.0
+e_de_100,0.36145,40,1442,0,0.0
+e_robust_aug,0.30508,40,1442,1383,0.9590846047156727

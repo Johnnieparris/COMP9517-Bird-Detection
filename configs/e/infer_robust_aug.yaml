@@ -1,0 +1,4 @@
+# Inference config for Study B run robust_aug; written by scripts/eval_e_runs.py
+checkpoint: results/e_runs/e_robust_aug/checkpoints/best_shared.pt
+imgsz: 640
+method: yolo

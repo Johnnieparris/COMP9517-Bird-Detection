@@ -1,0 +1,4 @@
+# Inference config for Study B run de_50; written by scripts/eval_e_runs.py
+checkpoint: results/e_runs/e_de_50/checkpoints/best_shared.pt
+imgsz: 640
+method: yolo

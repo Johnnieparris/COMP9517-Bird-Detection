@@ -1,0 +1,26 @@
+# Member E Study B run robust_aug (train fraction 1.0).
+model: yolo11n.pt
+augmentation_copies: 0
+augmentation_seed: 42
+epochs: 30
+imgsz: 640
+batch: 8
+nbs: 16
+device: mps
+workers: 4
+optimizer: AdamW
+lr0: 3.0e-05
+lrf: 0.10658
+weight_decay: 0.00069
+warmup_epochs: 0.61091
+warmup_bias_lr: 0.0
+cos_lr: true
+seed: 0
+deterministic: true
+amp: false
+patience: 0
+momentum: 0.937
+box: 9.22166
+cls: 0.64678
+dfl: 1.12881
+data_root: data/e_training/robust_aug
